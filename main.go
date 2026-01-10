@@ -11,29 +11,32 @@ import (
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
+const MaxFileSize = 2 << 20 * 256 // 256Mb
+
 func main() {
 	if len(os.Args) < 2 {
 		log.Fatalln("Pass WASM filename path, to read file from.")
 	}
 	ctx := context.Background()
 
+	f, err := os.OpenFile(os.Args[1], os.O_RDONLY, 0400)
+	if err != nil {
+		log.Fatalf("Could not open file: %s, err: %v\n", os.Args[1], err)
+	}
+
+	fstat, err := f.Stat()
+
+	fileSize := fstat.Size()
+	if fileSize > MaxFileSize {
+		log.Fatalf("File is bigger than maximally allowed(256Mb), file size: %d\n", fileSize)
+	}
+
+	defer f.Close()
+
 	// 64Mb buffer
-	buf := make([]byte, 2<<20*64)
+	buf := make([]byte, fileSize)
 
-	// Read only file for owner
-	// f, err := os.OpenFile(os.Args[1], os.O_RDONLY, 0400)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	//
-	// readSize, err := f.Read(buf)
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-
-	// log.Printf("Read: %d bytes\n", readSize)
-
-	buf, err := os.ReadFile(os.Args[1])
+	_, err = f.Read(buf)
 	if err != nil {
 		log.Fatalf("Could not read file: %s\n", os.Args[1])
 	}
