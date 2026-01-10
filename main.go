@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
@@ -18,10 +19,23 @@ func main() {
 		log.Fatalln("Pass WASM filename path, to read file from.")
 	}
 
-	wasmCode := readWasmFile(os.Args[1])
+	filename := os.Args[1]
+
+	wasmCode := readWasmFile(filename)
 	ctx := context.Background()
-	runSandboxedCode(ctx, wasmCode)
+
+	if strings.HasSuffix(filename, ".js") {
+		runSandboxedJSCode(ctx, wasmCode)
+	} else if strings.HasSuffix(filename, ".py") {
+		runSandboxedPythonCode(ctx, wasmCode)
+	} else {
+		runSandboxedNativeWasmCode(ctx, wasmCode)
+	}
+
+	runSandboxedNativeWasmCode(ctx, wasmCode)
 }
+
+func runHTTPServer() {}
 
 func readWasmFile(filename string) []byte {
 	f, err := os.OpenFile(filename, os.O_RDONLY, 0400)
@@ -48,7 +62,7 @@ func readWasmFile(filename string) []byte {
 	return buf
 }
 
-func runSandboxedCode(ctx context.Context, wasmCode []byte) {
+func runSandboxedNativeWasmCode(ctx context.Context, wasmCode []byte) {
 	runtime := wazero.NewRuntime(ctx)
 	defer runtime.Close(ctx)
 
@@ -70,3 +84,7 @@ func runSandboxedCode(ctx context.Context, wasmCode []byte) {
 
 	fmt.Println(api.DecodeI32(res[0]))
 }
+
+func runSandboxedPythonCode(ctx context.Context, pythonScript []byte) {}
+
+func runSandboxedJSCode(ctx context.Context, jsScript []byte) {}
