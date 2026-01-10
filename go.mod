@@ -1,4 +1,4 @@
-module github.com/KompocikDot/wambda
+module github.com/KompocikDot/faasm
 
 go 1.25.5
 
