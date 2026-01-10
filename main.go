@@ -17,11 +17,16 @@ func main() {
 	if len(os.Args) < 2 {
 		log.Fatalln("Pass WASM filename path, to read file from.")
 	}
-	ctx := context.Background()
 
-	f, err := os.OpenFile(os.Args[1], os.O_RDONLY, 0400)
+	wasmCode := readWasmFile(os.Args[1])
+	ctx := context.Background()
+	runSandboxedCode(ctx, wasmCode)
+}
+
+func readWasmFile(filename string) []byte {
+	f, err := os.OpenFile(filename, os.O_RDONLY, 0400)
 	if err != nil {
-		log.Fatalf("Could not open file: %s, err: %v\n", os.Args[1], err)
+		log.Fatalf("Could not open file: %s, err: %v\n", filename, err)
 	}
 
 	fstat, err := f.Stat()
@@ -33,20 +38,23 @@ func main() {
 
 	defer f.Close()
 
-	// 64Mb buffer
 	buf := make([]byte, fileSize)
 
 	_, err = f.Read(buf)
 	if err != nil {
-		log.Fatalf("Could not read file: %s\n", os.Args[1])
+		log.Fatalf("Could not read file: %s, due to an error: %v\n", filename, err)
 	}
 
+	return buf
+}
+
+func runSandboxedCode(ctx context.Context, wasmCode []byte) {
 	runtime := wazero.NewRuntime(ctx)
 	defer runtime.Close(ctx)
 
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtime)
 
-	module, err := runtime.InstantiateWithConfig(ctx, buf, wazero.NewModuleConfig().WithStartFunctions("_initialize"))
+	module, err := runtime.InstantiateWithConfig(ctx, wasmCode, wazero.NewModuleConfig().WithStartFunctions("_initialize"))
 	if err != nil {
 		log.Fatalf("Could not instantiate module due to an error: %v\n", err)
 	}
