@@ -4,18 +4,18 @@ import CodeEditor from 'simple-code-editor/CodeEditor.vue'
 import { ref, watch, reactive } from 'vue'
 
 const languagePicks = [
-  { label: 'javascript', value: ['javascript', 'JS'] },
-  { label: 'go', value: ['go', 'GO'] },
-  { label: 'python', value: ['python', 'PY'] },
-  { label: 'rust', value: ['rust', 'RS'] },
-  { label: 'c', value: ['c', 'C'] },
+  { label: 'Javascript', value: ['javascript', 'Javascript'] },
+  { label: 'Go', value: ['go', 'Golang'] },
+  { label: 'Python', value: ['python', 'Python'] },
+  { label: 'Rust', value: ['rust', 'Rust'] },
+  { label: 'C', value: ['c', 'C'] },
 ]
 
 const formState = reactive({
   code: '',
+  language: languagePicks[0].value,
+  name: '',
 })
-
-const language = ref(languagePicks[0].value)
 
 const createLambdaFunction = async (event) => {
   console.log(event)
@@ -23,22 +23,47 @@ const createLambdaFunction = async (event) => {
 </script>
 
 <template>
-  <UForm @submit="createLambdaFunction" :state="formState">
-    <div class="flex justify-between">
-      <UFormField label="Code language">
-        <USelectMenu :items="languagePicks" v-model="language" class="w-full" valueKey="value" />
+  <Navbar />
+  <UContainer>
+    <div class="text-4xl">Create lambda function</div>
+
+    <USeparator class="py-4" />
+
+    <UForm @submit="createLambdaFunction" :state="formState" class="space-y-4">
+      <div class="flex justify-between">
+        <div class="flex space-x-2">
+          <UFormField label="Name" class="w-1/2" required>
+            <UInput v-model="formState.name" class="w-full" valueKey="value" />
+          </UFormField>
+          <UFormField label="Programming language" class="w-1/2" required>
+            <USelectMenu
+              :items="languagePicks"
+              v-model="formState.language"
+              class="w-full"
+              valueKey="value"
+            />
+          </UFormField>
+        </div>
+        <UButton
+          class="self-end"
+          type="submit"
+          label="Create"
+          :disabled="formState.code.length === 0"
+          variant="soft"
+        />
+      </div>
+      <UFormField label="Code" required>
+        <CodeEditor
+          :key="formState.language[0]"
+          v-model="formState.code"
+          :highlight="hljs"
+          :languages="[formState.language]"
+          :line-nums="true"
+          theme="atom-one-dark"
+          width="100%"
+          height="500px"
+        />
       </UFormField>
-      <UButton type="submit" label="Create function" :disabled="formState.code.length === 0" />
-    </div>
-    <CodeEditor
-      :key="language[0]"
-      v-model="formState.code"
-      :highlight="hljs"
-      :languages="[language]"
-      :line-nums="true"
-      theme="atom-one-dark"
-      width="100%"
-      height="300px"
-    />
-  </UForm>
+    </UForm>
+  </UContainer>
 </template>
