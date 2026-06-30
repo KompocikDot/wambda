@@ -10,7 +10,7 @@ const items = ref<NavigationMenuItem[]>([
     label: 'Lambdas',
     icon: 'i-lucide-clipboard-list',
     to: '/',
-    active: route.path.endsWith('/'),
+    active: route.name === 'main' || route.name === 'lambda-details',
   },
   {
     label: 'Create new',

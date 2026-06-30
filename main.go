@@ -7,9 +7,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
+	"net/http"
 )
 
 const MaxFileSize = 2 << 20 * 256 // 256Mb
@@ -19,23 +21,31 @@ func main() {
 		log.Fatalln("Pass WASM filename path, to read file from.")
 	}
 
-	filename := os.Args[1]
+	// filename := os.Args[1]
 
-	wasmCode := readWasmFile(filename)
-	ctx := context.Background()
+	// wasmCode := readWasmFile(filename)
+	// ctx := context.Background()
 
-	if strings.HasSuffix(filename, ".js") {
-		runSandboxedJSCode(ctx, wasmCode)
-	} else if strings.HasSuffix(filename, ".py") {
-		runSandboxedPythonCode(ctx, wasmCode)
-	} else {
-		runSandboxedNativeWasmCode(ctx, wasmCode)
-	}
+	runHTTPServer()
 
-	runSandboxedNativeWasmCode(ctx, wasmCode)
+	// if strings.HasSuffix(filename, ".js") {
+	// 	runSandboxedJSCode(ctx, wasmCode)
+	// } else if strings.HasSuffix(filename, ".py") {
+	// 	runSandboxedPythonCode(ctx, wasmCode)
+	// } else {
+	// 	runSandboxedNativeWasmCode(ctx, wasmCode)
+	// }
+	//
+	// runSandboxedNativeWasmCode(ctx, wasmCode)
 }
 
-func runHTTPServer() {}
+func runHTTPServer(conn pgx.Conn) {
+	router := http.NewServeMux()
+	router.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
+		conn.Exec(r.Context(), "INSERT INTO functions(uuid, language, blob) VALUES($1, $2, $3)")
+	})
+	http.ListenAndServe("localhost:8000", router)
+}
 
 func readWasmFile(filename string) []byte {
 	f, err := os.OpenFile(filename, os.O_RDONLY, 0400)

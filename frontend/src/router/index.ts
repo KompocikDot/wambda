@@ -1,16 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainPage from '../pages/Main.vue'
-import CreateFunction from '../pages/CreateFunction.vue'
+import CreateFunctionPage from '../pages/CreateFunction.vue'
+import LambdaPage from '../pages/Lambda.vue'
 
 const routes = [
   {
     path: '/',
     component: MainPage,
+    name: 'main',
   },
   {
     path: '/create',
-    component: CreateFunction,
+    component: CreateFunctionPage,
+    name: 'create-lambda',
   },
+  { path: '/lambdas/:uuid', component: LambdaPage, name: 'lambda-details' },
 ]
 
 const router = createRouter({
