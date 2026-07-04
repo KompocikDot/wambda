@@ -1,42 +1,121 @@
-use wasmtime::{Engine, Linker, Module, Store};
-use wasmtime_wasi::WasiCtxBuilder;
-use wasmtime_wasi::p1::{self, WasiP1Ctx};
+use std::sync::Arc;
 
-struct State {
-    wasi: WasiP1Ctx,
+use axum::{
+    Json, Router,
+    extract::{Multipart, State},
+    http::StatusCode,
+    response::Response,
+    routing::post,
+};
+
+use chrono::Utc;
+use migration::{Migrator, MigratorTrait};
+use serde::Deserialize;
+
+mod convert;
+mod executor;
+mod orm;
+mod state;
+
+use crate::{
+    convert::{WasmtimeVal, from_json},
+    orm::runs,
+};
+use executor::execute_wasm;
+use sea_orm::{ActiveModelTrait, ActiveValue};
+use state::AppState;
+use uuid::Uuid;
+
+#[derive(Deserialize)]
+struct AddbinaryPayload {
+    args_types: Vec<String>,
+    return_types: Vec<String>,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let engine = Engine::default();
-    let module = Module::from_file(
-        &engine,
-        "/Users/kacper/Projects/faasm/test_functions/go/main.wasm",
-    )?;
+#[derive(Deserialize)]
+struct RunPayload {
+    binary_id: String,
+    fn_args: Vec<WasmtimeVal>,
+}
 
-    // 1. Build a WASI context.
-    let wasi = WasiCtxBuilder::new().build_p1();
-
-    // 2. Initialize the store with our WASI state
-    let mut store = Store::new(&engine, State { wasi });
-    let mut linker = Linker::new(&engine);
-
-    // 3. Add all the WASI imports (like `sched_yield`) into the linker
-    p1::add_to_linker_sync(&mut linker, |state: &mut State| &mut state.wasi)?;
-
-    // Now it will instantiate successfully because WASI is provided!
-    let instance = linker.instantiate(&mut store, &module)?;
-
-    // NOTE FOR GO 1.24+:
-    // Go WASI "reactor" modules require you to initialize the runtime once before calling exported functions.
-    if let Ok(init) = instance.get_typed_func::<(), ()>(&mut store, "_initialize") {
-        init.call(&mut store, ())?;
+#[tokio::main]
+async fn main() {
+    match dotenv::dotenv() {
+        Ok(_) => (),
+        Err(error) => panic!("Could not read .env file: {error:?}"),
     }
 
-    // Call your exported add function
-    let add = instance.get_typed_func::<(i32, i32), i32>(&mut store, "add")?;
-    let result = add.call(&mut store, (2, 3))?;
+    let state = match AppState::new().await {
+        Ok(state) => Arc::new(state),
+        Err(error) => {
+            panic!("Could not create pool connection to the postgres database: {error:?}")
+        }
+    };
 
-    println!("Result from Go Wasm: {}", result);
+    Migrator::up(&state.db, None).await.unwrap();
 
-    Ok(())
+    let app = Router::new()
+        .route("/run", post(run))
+        .route("/save", post(create_function))
+        .with_state(state);
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:8000")
+        .await
+        .unwrap();
+
+    axum::serve(listener, app).await.unwrap();
+}
+
+async fn create_function(
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> StatusCode {
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        if field.name() == Some("wasm") {
+            let data = field.bytes().await.unwrap();
+            let blob_uuid = Uuid::now_v7().to_string();
+
+            let insert = state
+                .blob_bucket
+                .put_object(&blob_uuid, &data.to_vec())
+                .await;
+
+            return match insert {
+                Ok(_) => StatusCode::CREATED,
+                Err(err) => {
+                    eprintln!("{err}");
+                    StatusCode::INTERNAL_SERVER_ERROR
+                }
+            };
+        }
+    }
+
+    return StatusCode::BAD_REQUEST;
+}
+
+async fn run(State(state): State<Arc<AppState>>, Json(payload): Json<RunPayload>) -> &'static str {
+    let start_time = ActiveValue::Set(Utc::now().into());
+    let binary = state
+        .blob_bucket
+        .get_object(payload.binary_id)
+        .await
+        .unwrap();
+
+    let mut args = Vec::new();
+    for arg in payload.fn_args {
+        args.push(from_json(arg));
+    }
+
+    let out = execute_wasm(binary.as_slice(), args.as_slice()).unwrap();
+    println!("{:?}", out);
+    let finish_time = ActiveValue::Set(Utc::now().into());
+
+    let new_run = runs::ActiveModel {
+        start_time,
+        finish_time,
+        ..Default::default()
+    };
+
+    new_run.insert(&state.db).await.unwrap();
+    "hi, world!"
 }
