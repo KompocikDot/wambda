@@ -1,2 +1,53 @@
-@import "tailwindcss";
-@import "@nuxt/ui";
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme static {
+  /* Rust — primary accent, same hue across both themes */
+  --color-rust-50: oklch(97% 0.02 40);
+  --color-rust-100: oklch(93% 0.04 40);
+  --color-rust-200: oklch(87% 0.07 40);
+  --color-rust-300: oklch(80% 0.1 40);
+  --color-rust-400: oklch(72% 0.13 40);
+  --color-rust-500: oklch(64% 0.17 40); /* dark-theme primary */
+  --color-rust-600: oklch(58% 0.15 40); /* light-theme primary */
+  --color-rust-700: oklch(50% 0.14 40);
+  --color-rust-800: oklch(40% 0.11 40);
+  --color-rust-900: oklch(30% 0.08 40);
+  --color-rust-950: oklch(22% 0.05 40);
+
+  /* Slate — neutral for dark UI (hue 260) */
+  --color-inkslate-50: oklch(96% 0.004 260);
+  --color-inkslate-100: oklch(85% 0.006 260);
+  --color-inkslate-200: oklch(80% 0.008 260);
+  --color-inkslate-300: oklch(64% 0.012 260);
+  --color-inkslate-400: oklch(56% 0.012 260);
+  --color-inkslate-500: oklch(50% 0.012 260);
+  --color-inkslate-600: oklch(38% 0.014 260);
+  --color-inkslate-700: oklch(32% 0.014 260);
+  --color-inkslate-800: oklch(23% 0.012 260);
+  --color-inkslate-900: oklch(21% 0.012 260);
+  --color-inkslate-950: oklch(19% 0.01 260);
+
+  /* Warm neutral for bright theme (hue 60) */
+  --color-sandstone-50: oklch(100% 0 60);
+  --color-sandstone-100: oklch(99% 0.004 60);
+  --color-sandstone-200: oklch(97% 0.008 60);
+  --color-sandstone-300: oklch(91% 0.008 60);
+  --color-sandstone-400: oklch(88% 0.01 60);
+  --color-sandstone-500: oklch(82% 0.012 60);
+  --color-sandstone-600: oklch(60% 0.02 60);
+  --color-sandstone-700: oklch(45% 0.02 60);
+  --color-sandstone-800: oklch(30% 0.015 60);
+  --color-sandstone-900: oklch(22% 0.01 60);
+  --color-sandstone-950: oklch(15% 0.008 60);
+
+  --color-success-100: oklch(90% 0.07 145);
+  --color-success-500: oklch(68% 0.15 145);
+  --color-success-700: oklch(38% 0.1 145);
+
+  --color-warning-100: oklch(90% 0.06 85);
+  --color-warning-500: oklch(75% 0.15 85);
+  --color-warning-700: oklch(45% 0.1 85);
+
+  --color-error-500: oklch(58% 0.18 25);
+}
