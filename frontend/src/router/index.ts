@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainPage from '../pages/Main.vue'
-import CreateFunctionPage from '../pages/CreateFunction.vue'
-import LambdaPage from '../pages/Lambda.vue'
+import MainPage from '../pages/MainPage.vue'
+import DashboardPage from '@/pages/DashboardPage.vue'
 
 const routes = [
   {
@@ -10,11 +9,10 @@ const routes = [
     name: 'main',
   },
   {
-    path: '/create',
-    component: CreateFunctionPage,
+    path: '/dashboard',
+    component: DashboardPage,
     name: 'create-lambda',
   },
-  { path: '/lambdas/:uuid', component: LambdaPage, name: 'lambda-details' },
 ]
 
 const router = createRouter({
