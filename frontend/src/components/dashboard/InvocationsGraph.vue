@@ -3,13 +3,13 @@ import { VisXYContainer, VisArea, VisLine, VisAxis } from '@unovis/vue'
 import { Scale } from '@unovis/ts'
 
 export type InvocationGraphPoint = {
-  date: Date
+  date: string
   totalInvocations: number
 }
 
 defineProps<{ usageData: InvocationGraphPoint[] }>()
 
-const x = (d: InvocationGraphPoint) => +d.date
+const x = (d: InvocationGraphPoint) => +new Date(d.date)
 const y = (d: InvocationGraphPoint) => d.totalInvocations
 
 const xtimeScale = Scale.scaleTime()

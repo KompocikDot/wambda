@@ -1,0 +1,746 @@
+[
+  {
+    "date": "2026-01-01",
+    "totalInvocations": 0
+  },
+  {
+    "date": "2026-01-02",
+    "totalInvocations": 5
+  },
+  {
+    "date": "2026-01-03",
+    "totalInvocations": 59
+  },
+  {
+    "date": "2026-01-04",
+    "totalInvocations": 124
+  },
+  {
+    "date": "2026-01-05",
+    "totalInvocations": 124
+  },
+  {
+    "date": "2026-01-06",
+    "totalInvocations": 130
+  },
+  {
+    "date": "2026-01-07",
+    "totalInvocations": 130
+  },
+  {
+    "date": "2026-01-08",
+    "totalInvocations": 130
+  },
+  {
+    "date": "2026-01-09",
+    "totalInvocations": 130
+  },
+  {
+    "date": "2026-01-10",
+    "totalInvocations": 135
+  },
+  {
+    "date": "2026-01-11",
+    "totalInvocations": 135
+  },
+  {
+    "date": "2026-01-12",
+    "totalInvocations": 139
+  },
+  {
+    "date": "2026-01-13",
+    "totalInvocations": 141
+  },
+  {
+    "date": "2026-01-14",
+    "totalInvocations": 144
+  },
+  {
+    "date": "2026-01-15",
+    "totalInvocations": 151
+  },
+  {
+    "date": "2026-01-16",
+    "totalInvocations": 155
+  },
+  {
+    "date": "2026-01-17",
+    "totalInvocations": 160
+  },
+  {
+    "date": "2026-01-18",
+    "totalInvocations": 160
+  },
+  {
+    "date": "2026-01-19",
+    "totalInvocations": 160
+  },
+  {
+    "date": "2026-01-20",
+    "totalInvocations": 165
+  },
+  {
+    "date": "2026-01-21",
+    "totalInvocations": 165
+  },
+  {
+    "date": "2026-01-22",
+    "totalInvocations": 165
+  },
+  {
+    "date": "2026-01-23",
+    "totalInvocations": 165
+  },
+  {
+    "date": "2026-01-24",
+    "totalInvocations": 169
+  },
+  {
+    "date": "2026-01-25",
+    "totalInvocations": 169
+  },
+  {
+    "date": "2026-01-26",
+    "totalInvocations": 169
+  },
+  {
+    "date": "2026-01-27",
+    "totalInvocations": 169
+  },
+  {
+    "date": "2026-01-28",
+    "totalInvocations": 171
+  },
+  {
+    "date": "2026-01-29",
+    "totalInvocations": 177
+  },
+  {
+    "date": "2026-01-30",
+    "totalInvocations": 177
+  },
+  {
+    "date": "2026-01-31",
+    "totalInvocations": 180
+  },
+  {
+    "date": "2026-02-01",
+    "totalInvocations": 180
+  },
+  {
+    "date": "2026-02-02",
+    "totalInvocations": 196
+  },
+  {
+    "date": "2026-02-03",
+    "totalInvocations": 199
+  },
+  {
+    "date": "2026-02-04",
+    "totalInvocations": 210
+  },
+  {
+    "date": "2026-02-05",
+    "totalInvocations": 223
+  },
+  {
+    "date": "2026-02-06",
+    "totalInvocations": 223
+  },
+  {
+    "date": "2026-02-07",
+    "totalInvocations": 225
+  },
+  {
+    "date": "2026-02-08",
+    "totalInvocations": 233
+  },
+  {
+    "date": "2026-02-09",
+    "totalInvocations": 241
+  },
+  {
+    "date": "2026-02-10",
+    "totalInvocations": 247
+  },
+  {
+    "date": "2026-02-11",
+    "totalInvocations": 256
+  },
+  {
+    "date": "2026-02-12",
+    "totalInvocations": 267
+  },
+  {
+    "date": "2026-02-13",
+    "totalInvocations": 278
+  },
+  {
+    "date": "2026-02-14",
+    "totalInvocations": 286
+  },
+  {
+    "date": "2026-02-15",
+    "totalInvocations": 298
+  },
+  {
+    "date": "2026-02-16",
+    "totalInvocations": 300
+  },
+  {
+    "date": "2026-02-17",
+    "totalInvocations": 300
+  },
+  {
+    "date": "2026-02-18",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-19",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-20",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-21",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-22",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-23",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-24",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-25",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-26",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-27",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-02-28",
+    "totalInvocations": 302
+  },
+  {
+    "date": "2026-03-01",
+    "totalInvocations": 304
+  },
+  {
+    "date": "2026-03-02",
+    "totalInvocations": 307
+  },
+  {
+    "date": "2026-03-03",
+    "totalInvocations": 307
+  },
+  {
+    "date": "2026-03-04",
+    "totalInvocations": 312
+  },
+  {
+    "date": "2026-03-05",
+    "totalInvocations": 316
+  },
+  {
+    "date": "2026-03-06",
+    "totalInvocations": 319
+  },
+  {
+    "date": "2026-03-07",
+    "totalInvocations": 319
+  },
+  {
+    "date": "2026-03-08",
+    "totalInvocations": 323
+  },
+  {
+    "date": "2026-03-09",
+    "totalInvocations": 347
+  },
+  {
+    "date": "2026-03-10",
+    "totalInvocations": 351
+  },
+  {
+    "date": "2026-03-11",
+    "totalInvocations": 351
+  },
+  {
+    "date": "2026-03-12",
+    "totalInvocations": 389
+  },
+  {
+    "date": "2026-03-13",
+    "totalInvocations": 393
+  },
+  {
+    "date": "2026-03-14",
+    "totalInvocations": 404
+  },
+  {
+    "date": "2026-03-15",
+    "totalInvocations": 404
+  },
+  {
+    "date": "2026-03-16",
+    "totalInvocations": 459
+  },
+  {
+    "date": "2026-03-17",
+    "totalInvocations": 503
+  },
+  {
+    "date": "2026-03-18",
+    "totalInvocations": 552
+  },
+  {
+    "date": "2026-03-19",
+    "totalInvocations": 672
+  },
+  {
+    "date": "2026-03-20",
+    "totalInvocations": 672
+  },
+  {
+    "date": "2026-03-21",
+    "totalInvocations": 672
+  },
+  {
+    "date": "2026-03-22",
+    "totalInvocations": 836
+  },
+  {
+    "date": "2026-03-23",
+    "totalInvocations": 983
+  },
+  {
+    "date": "2026-03-24",
+    "totalInvocations": 983
+  },
+  {
+    "date": "2026-03-25",
+    "totalInvocations": 1041
+  },
+  {
+    "date": "2026-03-26",
+    "totalInvocations": 1253
+  },
+  {
+    "date": "2026-03-27",
+    "totalInvocations": 1327
+  },
+  {
+    "date": "2026-03-28",
+    "totalInvocations": 1578
+  },
+  {
+    "date": "2026-03-29",
+    "totalInvocations": 1691
+  },
+  {
+    "date": "2026-03-30",
+    "totalInvocations": 1713
+  },
+  {
+    "date": "2026-03-31",
+    "totalInvocations": 1713
+  },
+  {
+    "date": "2026-04-01",
+    "totalInvocations": 1928
+  },
+  {
+    "date": "2026-04-02",
+    "totalInvocations": 2429
+  },
+  {
+    "date": "2026-04-03",
+    "totalInvocations": 3000
+  },
+  {
+    "date": "2026-04-04",
+    "totalInvocations": 3362
+  },
+  {
+    "date": "2026-04-05",
+    "totalInvocations": 3362
+  },
+  {
+    "date": "2026-04-06",
+    "totalInvocations": 3573
+  },
+  {
+    "date": "2026-04-07",
+    "totalInvocations": 3841
+  },
+  {
+    "date": "2026-04-08",
+    "totalInvocations": 4663
+  },
+  {
+    "date": "2026-04-09",
+    "totalInvocations": 5807
+  },
+  {
+    "date": "2026-04-10",
+    "totalInvocations": 5807
+  },
+  {
+    "date": "2026-04-11",
+    "totalInvocations": 5807
+  },
+  {
+    "date": "2026-04-12",
+    "totalInvocations": 6145
+  },
+  {
+    "date": "2026-04-13",
+    "totalInvocations": 6145
+  },
+  {
+    "date": "2026-04-14",
+    "totalInvocations": 7548
+  },
+  {
+    "date": "2026-04-15",
+    "totalInvocations": 9141
+  },
+  {
+    "date": "2026-04-16",
+    "totalInvocations": 9229
+  },
+  {
+    "date": "2026-04-17",
+    "totalInvocations": 10360
+  },
+  {
+    "date": "2026-04-18",
+    "totalInvocations": 10567
+  },
+  {
+    "date": "2026-04-19",
+    "totalInvocations": 12591
+  },
+  {
+    "date": "2026-04-20",
+    "totalInvocations": 12591
+  },
+  {
+    "date": "2026-04-21",
+    "totalInvocations": 14831
+  },
+  {
+    "date": "2026-04-22",
+    "totalInvocations": 17502
+  },
+  {
+    "date": "2026-04-23",
+    "totalInvocations": 17502
+  },
+  {
+    "date": "2026-04-24",
+    "totalInvocations": 18349
+  },
+  {
+    "date": "2026-04-25",
+    "totalInvocations": 20583
+  },
+  {
+    "date": "2026-04-26",
+    "totalInvocations": 20583
+  },
+  {
+    "date": "2026-04-27",
+    "totalInvocations": 22179
+  },
+  {
+    "date": "2026-04-28",
+    "totalInvocations": 22179
+  },
+  {
+    "date": "2026-04-29",
+    "totalInvocations": 22179
+  },
+  {
+    "date": "2026-04-30",
+    "totalInvocations": 26581
+  },
+  {
+    "date": "2026-05-01",
+    "totalInvocations": 26581
+  },
+  {
+    "date": "2026-05-02",
+    "totalInvocations": 27736
+  },
+  {
+    "date": "2026-05-03",
+    "totalInvocations": 32709
+  },
+  {
+    "date": "2026-05-04",
+    "totalInvocations": 33567
+  },
+  {
+    "date": "2026-05-05",
+    "totalInvocations": 34849
+  },
+  {
+    "date": "2026-05-06",
+    "totalInvocations": 34849
+  },
+  {
+    "date": "2026-05-07",
+    "totalInvocations": 34849
+  },
+  {
+    "date": "2026-05-08",
+    "totalInvocations": 40699
+  },
+  {
+    "date": "2026-05-09",
+    "totalInvocations": 45917
+  },
+  {
+    "date": "2026-05-10",
+    "totalInvocations": 45917
+  },
+  {
+    "date": "2026-05-11",
+    "totalInvocations": 51013
+  },
+  {
+    "date": "2026-05-12",
+    "totalInvocations": 59190
+  },
+  {
+    "date": "2026-05-13",
+    "totalInvocations": 62214
+  },
+  {
+    "date": "2026-05-14",
+    "totalInvocations": 70448
+  },
+  {
+    "date": "2026-05-15",
+    "totalInvocations": 70448
+  },
+  {
+    "date": "2026-05-16",
+    "totalInvocations": 70448
+  },
+  {
+    "date": "2026-05-17",
+    "totalInvocations": 70448
+  },
+  {
+    "date": "2026-05-18",
+    "totalInvocations": 78884
+  },
+  {
+    "date": "2026-05-19",
+    "totalInvocations": 82445
+  },
+  {
+    "date": "2026-05-20",
+    "totalInvocations": 85978
+  },
+  {
+    "date": "2026-05-21",
+    "totalInvocations": 97255
+  },
+  {
+    "date": "2026-05-22",
+    "totalInvocations": 107800
+  },
+  {
+    "date": "2026-05-23",
+    "totalInvocations": 116084
+  },
+  {
+    "date": "2026-05-24",
+    "totalInvocations": 118464
+  },
+  {
+    "date": "2026-05-25",
+    "totalInvocations": 132344
+  },
+  {
+    "date": "2026-05-26",
+    "totalInvocations": 136352
+  },
+  {
+    "date": "2026-05-27",
+    "totalInvocations": 136352
+  },
+  {
+    "date": "2026-05-28",
+    "totalInvocations": 143312
+  },
+  {
+    "date": "2026-05-29",
+    "totalInvocations": 151169
+  },
+  {
+    "date": "2026-05-30",
+    "totalInvocations": 156802
+  },
+  {
+    "date": "2026-05-31",
+    "totalInvocations": 174398
+  },
+  {
+    "date": "2026-06-01",
+    "totalInvocations": 174398
+  },
+  {
+    "date": "2026-06-02",
+    "totalInvocations": 183336
+  },
+  {
+    "date": "2026-06-03",
+    "totalInvocations": 183336
+  },
+  {
+    "date": "2026-06-04",
+    "totalInvocations": 199580
+  },
+  {
+    "date": "2026-06-05",
+    "totalInvocations": 220080
+  },
+  {
+    "date": "2026-06-06",
+    "totalInvocations": 220080
+  },
+  {
+    "date": "2026-06-07",
+    "totalInvocations": 221827
+  },
+  {
+    "date": "2026-06-08",
+    "totalInvocations": 234098
+  },
+  {
+    "date": "2026-06-09",
+    "totalInvocations": 251346
+  },
+  {
+    "date": "2026-06-10",
+    "totalInvocations": 260167
+  },
+  {
+    "date": "2026-06-11",
+    "totalInvocations": 279837
+  },
+  {
+    "date": "2026-06-12",
+    "totalInvocations": 286680
+  },
+  {
+    "date": "2026-06-13",
+    "totalInvocations": 307580
+  },
+  {
+    "date": "2026-06-14",
+    "totalInvocations": 320478
+  },
+  {
+    "date": "2026-06-15",
+    "totalInvocations": 342797
+  },
+  {
+    "date": "2026-06-16",
+    "totalInvocations": 347215
+  },
+  {
+    "date": "2026-06-17",
+    "totalInvocations": 379508
+  },
+  {
+    "date": "2026-06-18",
+    "totalInvocations": 379508
+  },
+  {
+    "date": "2026-06-19",
+    "totalInvocations": 379508
+  },
+  {
+    "date": "2026-06-20",
+    "totalInvocations": 393689
+  },
+  {
+    "date": "2026-06-21",
+    "totalInvocations": 393689
+  },
+  {
+    "date": "2026-06-22",
+    "totalInvocations": 406646
+  },
+  {
+    "date": "2026-06-23",
+    "totalInvocations": 406646
+  },
+  {
+    "date": "2026-06-24",
+    "totalInvocations": 406646
+  },
+  {
+    "date": "2026-06-25",
+    "totalInvocations": 406646
+  },
+  {
+    "date": "2026-06-26",
+    "totalInvocations": 426629
+  },
+  {
+    "date": "2026-06-27",
+    "totalInvocations": 438949
+  },
+  {
+    "date": "2026-06-28",
+    "totalInvocations": 446235
+  },
+  {
+    "date": "2026-06-29",
+    "totalInvocations": 455726
+  },
+  {
+    "date": "2026-06-30",
+    "totalInvocations": 455726
+  },
+  {
+    "date": "2026-07-01",
+    "totalInvocations": 481924
+  },
+  {
+    "date": "2026-07-02",
+    "totalInvocations": 528007
+  },
+  {
+    "date": "2026-07-03",
+    "totalInvocations": 536666
+  },
+  {
+    "date": "2026-07-04",
+    "totalInvocations": 536666
+  },
+  {
+    "date": "2026-07-05",
+    "totalInvocations": 561054
+  }
+]

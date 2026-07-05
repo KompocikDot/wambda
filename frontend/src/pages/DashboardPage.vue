@@ -5,6 +5,7 @@ import SidebarPanel from '@/components/dashboard/SidebarPanel.vue'
 import OverviewStats from '@/components/dashboard/OverviewStats.vue'
 import type { OverviewStat } from '@/components/dashboard/OverviewStats.vue'
 import type { InvocationGraphPoint } from '@/components/dashboard/InvocationsGraph.vue'
+import mockInvocations from '@/assets/mockInocations.json'
 
 const overviewStats: OverviewStat[] = [
   {
@@ -57,15 +58,7 @@ const invocationStats: InvocationStat[] = [
   },
 ]
 
-const invocationTimeline: InvocationGraphPoint[] = [
-  { date: new Date('2026-01-01'), totalInvocations: 0 },
-  { date: new Date('2026-01-02'), totalInvocations: 5 },
-  { date: new Date('2026-01-03'), totalInvocations: 59 },
-  { date: new Date('2026-01-04'), totalInvocations: 124 },
-  { date: new Date('2026-01-31'), totalInvocations: 180 },
-  { date: new Date('2026-02-04'), totalInvocations: 210 },
-  { date: new Date('2026-02-16'), totalInvocations: 300 },
-]
+const invocationTimeline: InvocationGraphPoint[] = mockInvocations
 </script>
 
 <template>
