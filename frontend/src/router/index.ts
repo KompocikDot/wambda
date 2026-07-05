@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainPage from '../pages/MainPage.vue'
 import DashboardPage from '@/pages/DashboardPage.vue'
 import FunctionsPage from '@/pages/FunctionsPage.vue'
+import RunsPage from '@/pages/RunsPage.vue'
 
 const routes = [
   {
@@ -19,6 +20,7 @@ const routes = [
     component: FunctionsPage,
     name: 'functions',
   },
+  { path: '/runs', component: RunsPage, name: 'runs' },
 ]
 
 const router = createRouter({
