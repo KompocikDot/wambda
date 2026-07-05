@@ -1,33 +1,38 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { useRoute } from '@nuxt/ui/runtime/vue/stubs/none.js'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const items: NavigationMenuItem[][] = [
+const items = computed<NavigationMenuItem[][]>(() => [
   [
     {
       label: 'Overview',
       icon: 'i-lucide-house',
       active: route.path.startsWith('/dashboard'),
+      to: '/dashboard',
     },
     {
       label: 'Functions',
       icon: 'i-lucide-square-function',
       active: route.path.startsWith('/functions'),
+      to: '/functions',
     },
     {
       label: 'Runs',
       icon: 'i-lucide-play',
       active: route.path.startsWith('/runs'),
+      to: '/runs',
     },
     {
       label: 'Settings',
       icon: 'i-lucide-settings',
       active: route.path.startsWith('/settings'),
+      to: '/settings',
     },
   ],
-]
+])
 </script>
 
 <template>
