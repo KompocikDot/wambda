@@ -2,11 +2,9 @@
 @import '@nuxt/ui';
 
 @theme static {
-  /* Fonts */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* PRIMARY — rust (shared hue 40, drives both colorways) */
   --color-rust-50: oklch(97% 0.02 40);
   --color-rust-100: oklch(93% 0.04 40);
   --color-rust-200: oklch(87% 0.07 40);
@@ -19,8 +17,6 @@
   --color-rust-900: oklch(30% 0.08 40);
   --color-rust-950: oklch(22% 0.05 40);
 
-  /* NEUTRAL — cool (hue 260), used by DARK colorway.
-     Overrides Tailwind's built-in 'slate' so Nuxt UI's type accepts it. */
   --color-slate-50: oklch(96% 0.004 260);
   --color-slate-100: oklch(85% 0.006 260);
   --color-slate-200: oklch(80% 0.008 260);
@@ -33,8 +29,6 @@
   --color-slate-900: oklch(21% 0.012 260);
   --color-slate-950: oklch(19% 0.01 260);
 
-  /* NEUTRAL — warm (hue 60), used by LIGHT colorway.
-     Overrides Tailwind's built-in 'stone'. */
   --color-stone-50: oklch(100% 0 60);
   --color-stone-100: oklch(99% 0.004 60);
   --color-stone-200: oklch(97% 0.008 60);
@@ -47,22 +41,27 @@
   --color-stone-900: oklch(22% 0.01 60);
   --color-stone-950: oklch(15% 0.008 60);
 
-  /* STATUS */
   --color-success-500: oklch(68% 0.15 145);
   --color-warning-500: oklch(75% 0.15 85);
+
+  --color-error-50: oklch(96% 0.02 25);
+  --color-error-100: oklch(90% 0.05 25);
+  --color-error-200: oklch(82% 0.09 25);
+  --color-error-400: oklch(70% 0.16 25);
   --color-error-500: oklch(58% 0.18 25);
+  --color-error-600: oklch(50% 0.16 25);
+  --color-error-700: oklch(42% 0.13 25);
+  --color-error-900: oklch(28% 0.08 25);
+  --color-error-950: oklch(22% 0.05 25);
 }
 
-/* ─────────────────────────────────────────────
-   LIGHT colorway — "Warm Rust"
-   ───────────────────────────────────────────── */
 :root {
   --ui-primary: var(--color-rust-600);
 
-  --ui-bg: var(--color-stone-50); /* page */
-  --ui-bg-muted: var(--color-stone-100); /* sidebar / subtle panels */
-  --ui-bg-elevated: var(--color-stone-100); /* cards */
-  --ui-bg-accented: var(--color-stone-200); /* hover/pressed, inset code */
+  --ui-bg: var(--color-stone-50);
+  --ui-bg-muted: var(--color-stone-100);
+  --ui-bg-elevated: var(--color-stone-100);
+  --ui-bg-accented: var(--color-stone-200);
 
   --ui-border: var(--color-stone-400);
   --ui-border-muted: var(--color-stone-300);
@@ -73,16 +72,13 @@
   --ui-text-inverted: white;
 }
 
-/* ─────────────────────────────────────────────
-   DARK colorway — "Terminal Rust"
-   ───────────────────────────────────────────── */
 .dark {
   --ui-primary: var(--color-rust-500);
 
-  --ui-bg: var(--color-slate-950); /* page */
-  --ui-bg-muted: var(--color-slate-900); /* sidebar */
-  --ui-bg-elevated: var(--color-slate-800); /* cards */
-  --ui-bg-accented: var(--color-slate-700); /* hover/pressed, inset code */
+  --ui-bg: var(--color-slate-950);
+  --ui-bg-muted: var(--color-slate-900);
+  --ui-bg-elevated: var(--color-slate-800);
+  --ui-bg-accented: var(--color-slate-700);
 
   --ui-border: var(--color-slate-700);
   --ui-border-muted: var(--color-slate-700);

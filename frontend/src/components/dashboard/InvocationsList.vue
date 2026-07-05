@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="bg-elevated/50 ring ring-default rounded-lg p-4">
+  <UCard class="flex flex-col" :ui="{ body: 'bg-elevated/50 h-full' }">
     <div class="text-highlighted font-bold">Top functions by invocations</div>
     <div
       class="flex justify-between not-last:border-b pt-2"
@@ -21,5 +21,5 @@ defineProps<{
       <div>{{ stat.value }}</div>
     </div>
     <div v-if="invocationStats.length === 0">No invocations found</div>
-  </div>
+  </UCard>
 </template>

@@ -76,10 +76,10 @@ const invocationTimeline: InvocationGraphPoint[] = [
       <UDashboardPanel class="px-6 py-4 gap-y-4">
         <OverviewStats :overview-stats="overviewStats" />
         <div class="flex gap-x-4">
-          <div class="w-3/5 bg-elevated/50 ring ring-default rounded-lg p-4">
+          <UCard class="w-3/5">
             <div class="text-highlighted font-bold">Invocations over time</div>
             <InvocationsGraph :usage-data="invocationTimeline" />
-          </div>
+          </UCard>
           <InvocationsList class="w-2/5" :invocation-stats="invocationStats" />
         </div>
       </UDashboardPanel>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -28,7 +31,7 @@ const items = ref<NavigationMenuItem[]>([
 
     <template #right>
       <div class="flex gap-x-1">
-        <UButton variant="ghost">Sign In</UButton>
+        <UButton variant="ghost" :to="{ name: 'dashboard' }">Sign In</UButton>
         <UButton>Get started</UButton>
         <UColorModeButton />
       </div>

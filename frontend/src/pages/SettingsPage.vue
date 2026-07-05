@@ -41,14 +41,19 @@ const deleteAccount = async () => {}
               <UButton type="submit" label="Update password" variant="outline" class="w-fit" />
             </UForm>
           </UCard>
-          <UCard class="w-2/3" variant="subtle">
-            <UForm class="flex flex-col gap-y-2" @submit="deleteAccount">
-              <div class="text-highlighted font-bold">Delete account</div>
-              <div class="text-muted text-sm">
+          <UCard
+            class="w-2/3 rounded-lg bg-error-50 dark:bg-error-950 ring ring-error-200 dark:ring-error-900"
+            variant="subtle"
+          >
+            <UForm class="flex flex-col" @submit="deleteAccount">
+              <h3 class="text-error-700 dark:text-error-400 font-semibold text-sm">
+                Delete account
+              </h3>
+              <div class="text-muted text-sm mt-1">
                 Permanently deletes your account, all deployed functions and run history. This
                 cannot be undone.
               </div>
-              <UButton type="submit" label="Delete account" color="error" class="w-fit" />
+              <UButton type="submit" label="Delete account" color="error" class="w-fit mt-4" />
             </UForm>
           </UCard>
         </div>

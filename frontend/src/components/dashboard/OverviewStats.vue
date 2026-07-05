@@ -15,11 +15,7 @@ defineProps<{
 
 <template>
   <div class="flex gap-x-4 w-full">
-    <div
-      class="bg-elevated/50 ring ring-default rounded-lg p-4 w-full"
-      v-for="stat in overviewStats"
-      :key="stat.header"
-    >
+    <UCard class="w-full" v-for="stat in overviewStats" :key="stat.header">
       <div class="text-muted text-sm">{{ stat.header }}</div>
       <div class="text-3xl font-bold text-highlighted flex">
         <div>{{ stat.value.toLocaleString() }}</div>
@@ -29,6 +25,6 @@ defineProps<{
         <UIcon v-if="stat.summaryIcon !== undefined" :name="stat.summaryIcon" />
         <div>{{ stat.summary }}</div>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

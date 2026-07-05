@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ButtonProps } from '@nuxt/ui'
 import TermSrc from '@/assets/term.svg'
+
 const links: ButtonProps[] = [
   {
     label: 'Get started free',
