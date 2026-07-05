@@ -12,7 +12,7 @@ type FunctionForm = {
   name: string
   language: string
   trigger: string
-  memoryLimit: number
+  memoryLimitMb: number
   timeoutMs: number
   envVariables: EnvVariable[]
   binary?: File
@@ -24,7 +24,7 @@ const formState = reactive<FunctionForm>({
   name: '',
   language: '',
   trigger: '',
-  memoryLimit: 1024 * 1024 * 32, // 32Mb
+  memoryLimitMb: 32,
   timeoutMs: 5000,
   envVariables: [],
   binary: undefined,
@@ -101,8 +101,15 @@ const onSubmit = async (event: FormSubmitEvent<FunctionForm>) => {}
               </UFormField>
             </div>
             <div class="flex gap-x-2">
-              <UFormField label="Memory limit" class="w-1/2">
-                <USelectMenu class="w-full" v-model="formState.memoryLimit" />
+              <UFormField label="Memory limit (Mb)" class="w-1/2">
+                <UInput
+                  class="w-full"
+                  type="number"
+                  step="1"
+                  min="1"
+                  max="2048"
+                  v-model="formState.memoryLimitMb"
+                />
               </UFormField>
               <UFormField label="Timeout (ms)" class="w-1/2">
                 <UInput
