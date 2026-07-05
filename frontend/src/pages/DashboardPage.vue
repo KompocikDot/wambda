@@ -66,14 +66,14 @@ const invocationTimeline: InvocationGraphPoint[] = mockInvocations
     <SidebarPanel />
     <div class="flex flex-col w-full h-full">
       <UDashboardNavbar title="Overview" icon="i-lucide-house" class="w-full" />
-      <UDashboardPanel class="px-6 py-4 gap-y-4">
+      <UDashboardPanel class="flex-1 min-h-0 overflow-y-auto px-6 py-4 gap-y-4">
         <OverviewStats :overview-stats="overviewStats" />
-        <div class="flex gap-x-4">
-          <UCard class="w-3/5">
+        <div class="flex gap-4 flex-col md:flex-row">
+          <UCard class="w-full md:w-3/5">
             <div class="text-highlighted font-bold">Invocations over time</div>
             <InvocationsGraph :usage-data="invocationTimeline" />
           </UCard>
-          <InvocationsList class="w-2/5" :invocation-stats="invocationStats" />
+          <InvocationsList class="w-full md:w-2/5" :invocation-stats="invocationStats" />
         </div>
       </UDashboardPanel>
     </div>

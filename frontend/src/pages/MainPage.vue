@@ -36,16 +36,19 @@ const links: ButtonProps[] = [
           title="Millisecond cold starts"
           description="A lightweight Rust runtime boots each WASm module in under 2ms."
           icon="i-lucide-rabbit"
+          class="rounded-none rounded-tl-lg"
         />
         <UPageCard
           title="Sandboxed by default"
           description="Every function runs in an isolated WASM sandbox with no host access."
           icon="i-lucide-lock"
+          class="rounded-none"
         />
         <UPageCard
           title="Any language, one target"
           description="Compile from Rust, AssemblyScript or C — deploy the same way."
           icon="i-lucide-code"
+          class="rounded-none rounded-tr-lg"
         />
       </div>
     </UContainer>

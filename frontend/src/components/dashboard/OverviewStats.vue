@@ -14,8 +14,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex gap-x-4 w-full">
-    <UCard class="w-full" v-for="stat in overviewStats" :key="stat.header">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+    <UCard v-for="stat in overviewStats" :key="stat.header">
       <div class="text-muted text-sm">{{ stat.header }}</div>
       <div class="text-3xl font-bold text-highlighted flex">
         <div>{{ stat.value.toLocaleString() }}</div>
