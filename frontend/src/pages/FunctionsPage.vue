@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import SidebarPanel from '@/components/dashboard/SidebarPanel.vue'
-import type { TableColumn } from '@nuxt/ui'
+import type { TableColumn, TableRow } from '@nuxt/ui'
 import { computed, h, ref, resolveComponent } from 'vue'
+import { useRouter } from 'vue-router'
 
 const UBadge = resolveComponent('UBadge')
+
+const router = useRouter()
 
 type Function = {
   name: string
@@ -120,6 +123,10 @@ const filteredFunctions = computed(() => {
 const setFnFilter = (value: string) => {
   functionFilter.value = value
 }
+
+const onRowClick = (_: Event, row: TableRow<Function>) => {
+  router.push({ name: 'singleFunction', params: { id: row.getValue<string>('name') } })
+}
 </script>
 
 <template>
@@ -186,6 +193,7 @@ const setFnFilter = (value: string) => {
           v-model:global-filter="globalTableFilter"
           :data="filteredFunctions"
           :columns="columns"
+          @select="onRowClick"
         />
       </UDashboardPanel>
     </div>

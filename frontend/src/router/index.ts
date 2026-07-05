@@ -4,6 +4,8 @@ import DashboardPage from '@/pages/DashboardPage.vue'
 import FunctionsPage from '@/pages/FunctionsPage.vue'
 import RunsPage from '@/pages/RunsPage.vue'
 import SettingsPage from '@/pages/SettingsPage.vue'
+import SingleFunctionPage from '@/pages/SingleFunctionPage.vue'
+import NotFoundPage from '@/pages/404Page.vue'
 
 const routes = [
   {
@@ -21,8 +23,15 @@ const routes = [
     component: FunctionsPage,
     name: 'functions',
   },
+  {
+    path: '/functions/:id',
+    component: SingleFunctionPage,
+    name: 'singleFunction',
+  },
   { path: '/runs', component: RunsPage, name: 'runs' },
   { path: '/settings', component: SettingsPage, name: 'settings' },
+  { path: '/not-found', component: NotFoundPage, name: 'notFound' },
+  { path: '/:pathMatch(.*)', redirect: '/not-found' },
 ]
 
 const router = createRouter({
