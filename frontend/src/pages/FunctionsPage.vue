@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SidebarPanel from '@/components/dashboard/SidebarPanel.vue'
 import type { TableColumn } from '@nuxt/ui'
-import { h, resolveComponent } from 'vue'
+import { computed, h, ref, resolveComponent } from 'vue'
 
 const UBadge = resolveComponent('UBadge')
 
@@ -66,17 +66,28 @@ const columns: TableColumn<Function>[] = [
       },
     },
   },
-  { accessorKey: 'language', header: 'language' },
+  {
+    accessorKey: 'language',
+    header: 'language',
+    cell: ({ row }) => {
+      const label = row.getValue<string>('language')
+      const capitalizedLabel = label[0]?.toUpperCase() + label.slice(1)
+      return capitalizedLabel
+    },
+  },
   {
     accessorKey: 'status',
     header: 'status',
-    cell: ({ row }) =>
-      h(UBadge, {
+    cell: ({ row }) => {
+      const label = row.getValue<string>('status')
+      const capitalizedLabel = label[0]?.toUpperCase() + label.slice(1)
+      return h(UBadge, {
         variant: 'subtle',
-        label: row.getValue<string>('status'),
+        label: capitalizedLabel,
         color: row.original.statusColor,
         class: 'rounded-full',
-      }),
+      })
+    },
   },
   {
     accessorKey: 'avgLatencyMs',
@@ -84,13 +95,27 @@ const columns: TableColumn<Function>[] = [
     cell: ({ row }) => {
       const latency = row.getValue<number>('avgLatencyMs')
       if (latency > 1000) {
-        return `${(latency / 1000).toFixed(1)} s`
+        return `${(latency / 1000).toFixed(1)}s`
       }
-      return `${latency} ms`
+      return `${latency}ms`
     },
   },
-  { accessorKey: 'invocations', header: 'invocations (24h)' },
+  {
+    accessorKey: 'invocations',
+    header: 'invocations (24h)',
+    cell: ({ row }) => row.getValue<number>('invocations').toLocaleString(),
+  },
 ]
+
+const functionFilter = ref('all')
+const globalTableFilter = ref('')
+
+const filteredFunctions = computed(() => {
+  if (functionFilter.value === 'all') {
+    return functions
+  }
+  return functions.filter((fn) => fn.status === functionFilter.value)
+})
 </script>
 
 <template>
@@ -99,15 +124,40 @@ const columns: TableColumn<Function>[] = [
     <div class="flex flex-col w-full h-full">
       <UDashboardNavbar title="Functions" icon="i-lucide-square-function">
         <template #right>
-          <UButton icon="i-lucide-plus" label="New function" />
+          <UButton to="/functions/new" icon="i-lucide-plus" label="New function" />
         </template>
       </UDashboardNavbar>
       <UDashboardPanel class="px-6 py-4 gap-y-4">
         <div class="flex gap-x-2">
-          <UInput icon="i-lucide-search" placeholder="Search functions..."></UInput>
-          <UButton label="All" class="rounded-full" variant="subtle" />
-          <UButton label="Active" class="rounded-full" variant="ghost" />
-          <UButton label="Disabled" class="rounded-full" variant="ghost" />
+          <UInput
+            icon="i-lucide-search"
+            placeholder="Search functions..."
+            v-model="globalTableFilter"
+          />
+          <UButton
+            label="All"
+            class="rounded-full"
+            :variant="functionFilter === 'all' ? 'subtle' : 'ghost'"
+            @click="functionFilter = 'all'"
+          />
+          <UButton
+            label="Active"
+            class="rounded-full"
+            :variant="functionFilter === 'active' ? 'subtle' : 'ghost'"
+            @click="functionFilter = 'active'"
+          />
+          <UButton
+            label="Degraded"
+            class="rounded-full"
+            :variant="functionFilter === 'degraded' ? 'subtle' : 'ghost'"
+            @click="functionFilter = 'degraded'"
+          />
+          <UButton
+            label="Disabled"
+            class="rounded-full"
+            :variant="functionFilter === 'disabled' ? 'subtle' : 'ghost'"
+            @click="functionFilter = 'disabled'"
+          />
         </div>
         <UEmpty
           v-if="functions.length === 0"
@@ -127,7 +177,12 @@ const columns: TableColumn<Function>[] = [
             },
           ]"
         />
-        <UTable v-else :data="functions" :columns="columns" />
+        <UTable
+          v-else
+          v-model:global-filter="globalTableFilter"
+          :data="filteredFunctions"
+          :columns="columns"
+        />
       </UDashboardPanel>
     </div>
   </UDashboardGroup>
