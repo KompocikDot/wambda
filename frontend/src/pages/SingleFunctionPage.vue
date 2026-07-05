@@ -53,8 +53,21 @@ const triggers = [
   { label: 'Cron', value: 'cron' },
 ]
 
+const newEnvVariable = reactive<EnvVariable>({
+  key: '',
+  value: '',
+})
+
 const addVariable = () => {
-  formState.envVariables.push({ key: '', value: '' })
+  if (!newEnvVariable.key.trim()) {
+    return
+  }
+  formState.envVariables.push({
+    key: newEnvVariable.key,
+    value: newEnvVariable.value,
+  })
+  newEnvVariable.key = ''
+  newEnvVariable.value = ''
 }
 
 const removeVariable = (index: number) => {
@@ -123,7 +136,7 @@ const onSubmit = async (event: FormSubmitEvent<FunctionForm>) => {}
             </div>
             <div class="flex flex-col gap-2">
               <UFormField label="Environment variables">
-                <div class="flex flex-col gap-y-1" v-if="formState.envVariables.length > 0">
+                <div class="flex flex-col gap-y-2">
                   <div
                     class="flex items-center gap-x-2"
                     v-for="(variable, index) in formState.envVariables"
@@ -133,17 +146,18 @@ const onSubmit = async (event: FormSubmitEvent<FunctionForm>) => {}
                     <UInput class="w-full" v-model="variable.value" />
                     <UButton icon="i-lucide-x" variant="outline" @click="removeVariable(index)" />
                   </div>
-                </div>
-                <div class="flex items-center gap-x-2" v-else>
-                  <UInput class="w-full" />
-                  <UInput class="w-full" />
-                  <UButton icon="i-lucide-x" variant="outline" disabled />
+                  <div class="flex items-center gap-x-2">
+                    <UInput class="w-full" v-model="newEnvVariable.key" placeholder="Key" />
+                    <UInput class="w-full" v-model="newEnvVariable.value" placeholder="Value" />
+                    <UButton icon="i-lucide-x" variant="outline" disabled />
+                  </div>
                 </div>
               </UFormField>
               <UButton
                 label="Add variable"
                 class="w-fit"
                 @click="addVariable"
+                :disabled="newEnvVariable.key.trim() === ''"
                 icon="i-lucide-plus"
                 variant="outline"
               />
