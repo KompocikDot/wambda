@@ -4,7 +4,6 @@ import type { BreadcrumbItem, TabsItem } from '@nuxt/ui'
 import { useRoute } from 'vue-router'
 import { AnsiUp } from 'ansi_up'
 import { computed, ref } from 'vue'
-
 const route = useRoute()
 const ansiUP = new AnsiUp()
 
@@ -51,7 +50,7 @@ const payload = JSON.stringify(
 <template>
   <UDashboardGroup
     ><SidebarPanel />
-    <div class="flex flex-col w-full h-full">
+    <div class="flex flex-col w-full h-full bg-inkslate-950">
       <UDashboardNavbar class="w-full">
         <template #leading>
           <div class="flex flex-col">
@@ -109,8 +108,8 @@ const payload = JSON.stringify(
                 </div>
 
                 <div class="flex self-end gap-x-2">
-                  <UButton label="Copy response" variant="outline" />
-                  <UButton label="Download output" variant="outline" />
+                  <UButton icon="i-lucide-copy" variant="outline" />
+                  <UButton icon="i-lucide-download" label="Download" variant="outline" />
                 </div>
               </div>
               <UCard class="m-4">

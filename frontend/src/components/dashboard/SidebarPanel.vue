@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useColorMode } from '@vueuse/core'
 import FaasmLogo from '../FaasmLogo.vue'
 
 const route = useRoute()
+const router = useRouter()
+const colorMode = useColorMode()
+
+const logout = () => {
+  router.push({ name: 'main' })
+}
 
 const items = computed<NavigationMenuItem[][]>(() => [
   [
@@ -34,6 +41,53 @@ const items = computed<NavigationMenuItem[][]>(() => [
     },
   ],
 ])
+
+const userItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Appearance',
+      icon: 'i-lucide-sun-moon',
+      children: [
+        {
+          label: 'Light',
+          icon: 'i-lucide-sun',
+          type: 'checkbox',
+          checked: colorMode.value === 'light',
+          onUpdateChecked(checked: boolean) {
+            if (checked) {
+              colorMode.value = 'light'
+            }
+          },
+          onSelect(e: Event) {
+            e.preventDefault()
+          },
+        },
+        {
+          label: 'Dark',
+          icon: 'i-lucide-moon',
+          type: 'checkbox',
+
+          checked: colorMode.value === 'dark',
+          onUpdateChecked(checked: boolean) {
+            if (checked) {
+              colorMode.value = 'dark'
+            }
+          },
+          onSelect(e: Event) {
+            e.preventDefault()
+          },
+        },
+      ],
+    },
+  ],
+  [
+    {
+      label: 'Log out',
+      icon: 'i-lucide-log-out',
+      onSelect: logout,
+    },
+  ],
+])
 </script>
 
 <template>
@@ -55,7 +109,14 @@ const items = computed<NavigationMenuItem[][]>(() => [
     </template>
 
     <template #footer>
-      <UUser name="John Doe" description="Software Engineer" />
+      <UDropdownMenu
+        :items="userItems"
+        :content="{ align: 'center', collisionPadding: 12 }"
+        :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-48' }"
+      >
+        <template #colorpicker></template>
+        <UUser class="w-full" name="John Doe" description="Software Engineer" />
+      </UDropdownMenu>
     </template>
   </UDashboardSidebar>
 </template>
