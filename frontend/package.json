@@ -16,9 +16,11 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@highlightjs/vue-plugin": "^2.1.0",
     "@nuxt/ui": "^4.3.0",
     "@tailwindcss/vite": "^4.1.18",
     "@unovis/vue": "^1.6.7",
+    "ansi_up": "^6.0.6",
     "highlight.js": "^11.11.1",
     "simple-code-editor": "^2.1.0",
     "tailwindcss": "^4.1.18",

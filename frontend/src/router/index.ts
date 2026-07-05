@@ -6,6 +6,7 @@ import RunsPage from '@/pages/RunsPage.vue'
 import SettingsPage from '@/pages/SettingsPage.vue'
 import SingleFunctionPage from '@/pages/SingleFunctionPage.vue'
 import NotFoundPage from '@/pages/404Page.vue'
+import SingleRunPage from '@/pages/SingleRunPage.vue'
 
 const routes = [
   {
@@ -29,6 +30,12 @@ const routes = [
     name: 'singleFunction',
   },
   { path: '/runs', component: RunsPage, name: 'runs' },
+  {
+    path: '/runs/:id',
+    component: SingleRunPage,
+    name: 'singleRun',
+  },
+
   { path: '/settings', component: SettingsPage, name: 'settings' },
   { path: '/not-found', component: NotFoundPage, name: 'notFound' },
   { path: '/:pathMatch(.*)', redirect: '/not-found' },
