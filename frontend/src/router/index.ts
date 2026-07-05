@@ -3,6 +3,7 @@ import MainPage from '../pages/MainPage.vue'
 import DashboardPage from '@/pages/DashboardPage.vue'
 import FunctionsPage from '@/pages/FunctionsPage.vue'
 import RunsPage from '@/pages/RunsPage.vue'
+import SettingsPage from '@/pages/SettingsPage.vue'
 
 const routes = [
   {
@@ -21,6 +22,7 @@ const routes = [
     name: 'functions',
   },
   { path: '/runs', component: RunsPage, name: 'runs' },
+  { path: '/settings', component: SettingsPage, name: 'settings' },
 ]
 
 const router = createRouter({
