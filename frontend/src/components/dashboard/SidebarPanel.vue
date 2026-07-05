@@ -91,7 +91,11 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-  <UDashboardSidebar collapsible resizable :ui="{ footer: 'border-t border-default' }">
+  <UDashboardSidebar
+    collapsible
+    resizable
+    :ui="{ footer: 'border-t border-default', root: 'bg-muted' }"
+  >
     <template #header="{ collapsed }">
       <FaasmLogo class="pl-1.5 h-5 w-auto shrink-0" />
       <div v-if="!collapsed" class="font-bold">FAASM</div>
