@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainPage from '../pages/MainPage.vue'
 import DashboardPage from '@/pages/DashboardPage.vue'
+import FunctionsPage from '@/pages/FunctionsPage.vue'
 
 const routes = [
   {
@@ -11,7 +12,12 @@ const routes = [
   {
     path: '/dashboard',
     component: DashboardPage,
-    name: 'create-lambda',
+    name: 'dashboard',
+  },
+  {
+    path: '/functions',
+    component: FunctionsPage,
+    name: 'functions',
   },
 ]
 

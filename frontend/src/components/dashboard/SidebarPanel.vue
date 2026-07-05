@@ -1,23 +1,30 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { useRoute } from '@nuxt/ui/runtime/vue/stubs/none.js'
+
+const route = useRoute()
 
 const items: NavigationMenuItem[][] = [
   [
     {
       label: 'Overview',
       icon: 'i-lucide-house',
+      active: route.path.startsWith('/dashboard'),
     },
     {
       label: 'Functions',
       icon: 'i-lucide-square-function',
+      active: route.path.startsWith('/functions'),
     },
     {
       label: 'Runs',
       icon: 'i-lucide-play',
+      active: route.path.startsWith('/runs'),
     },
     {
       label: 'Settings',
       icon: 'i-lucide-settings',
+      active: route.path.startsWith('/settings'),
     },
   ],
 ]
@@ -41,18 +48,8 @@ const items: NavigationMenuItem[][] = [
       />
     </template>
 
-    <template #footer="{ collapsed }">
-      <UButton
-        :avatar="{
-          src: 'https://github.com/benjamincanac.png',
-          loading: 'lazy' as const,
-        }"
-        :label="collapsed ? undefined : 'Benjamin'"
-        color="neutral"
-        variant="ghost"
-        class="w-full"
-        :block="collapsed"
-      />
+    <template #footer>
+      <UUser name="John Doe" description="Software Engineer" />
     </template>
   </UDashboardSidebar>
 </template>

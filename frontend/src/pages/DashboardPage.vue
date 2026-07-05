@@ -71,7 +71,7 @@ const invocationTimeline: InvocationGraphPoint[] = [
 <template>
   <UDashboardGroup>
     <SidebarPanel />
-    <divc class="flex flex-col w-full h-full">
+    <div class="flex flex-col w-full h-full">
       <UDashboardNavbar title="Overview" icon="i-lucide-house" class="w-full" />
       <UDashboardPanel class="px-6 py-4 gap-y-4">
         <OverviewStats :overview-stats="overviewStats" />
@@ -83,6 +83,6 @@ const invocationTimeline: InvocationGraphPoint[] = [
           <InvocationsList class="w-2/5" :invocation-stats="invocationStats" />
         </div>
       </UDashboardPanel>
-    </divc>
+    </div>
   </UDashboardGroup>
 </template>
