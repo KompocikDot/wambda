@@ -2,6 +2,7 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import FaasmLogo from '../FaasmLogo.vue'
 
 const route = useRoute()
 
@@ -38,7 +39,7 @@ const items = computed<NavigationMenuItem[][]>(() => [
 <template>
   <UDashboardSidebar collapsible resizable :ui="{ footer: 'border-t border-default' }">
     <template #header="{ collapsed }">
-      <Logo class="pl-1.5 h-5 w-auto shrink-0" />
+      <FaasmLogo class="pl-1.5 h-5 w-auto shrink-0" />
       <div v-if="!collapsed" class="font-bold">FAASM</div>
     </template>
 

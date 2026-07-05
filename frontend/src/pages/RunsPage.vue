@@ -121,6 +121,10 @@ const filteredFunctions = computed(() => {
   }
   return functions.filter((fn) => fn.status === functionFilter.value)
 })
+
+const setFnFilter = (value: string) => {
+  functionFilter.value = value
+}
 </script>
 
 <template>
@@ -140,19 +144,19 @@ const filteredFunctions = computed(() => {
             label="All"
             class="rounded-full"
             :variant="functionFilter === 'all' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'all'"
+            @click="setFnFilter('all')"
           />
           <UButton
             label="Success"
             class="rounded-full"
             :variant="functionFilter === 'success' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'success'"
+            @click="setFnFilter('success')"
           />
           <UButton
             label="Error"
             class="rounded-full"
             :variant="functionFilter === 'error' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'error'"
+            @click="setFnFilter('error')"
           />
         </div>
         <UTable

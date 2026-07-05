@@ -116,6 +116,10 @@ const filteredFunctions = computed(() => {
   }
   return functions.filter((fn) => fn.status === functionFilter.value)
 })
+
+const setFnFilter = (value: string) => {
+  functionFilter.value = value
+}
 </script>
 
 <template>
@@ -138,25 +142,25 @@ const filteredFunctions = computed(() => {
             label="All"
             class="rounded-full"
             :variant="functionFilter === 'all' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'all'"
+            @click="setFnFilter('all')"
           />
           <UButton
             label="Active"
             class="rounded-full"
             :variant="functionFilter === 'active' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'active'"
+            @click="setFnFilter('active')"
           />
           <UButton
             label="Degraded"
             class="rounded-full"
             :variant="functionFilter === 'degraded' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'degraded'"
+            @click="setFnFilter('degraded')"
           />
           <UButton
             label="Disabled"
             class="rounded-full"
             :variant="functionFilter === 'disabled' ? 'subtle' : 'ghost'"
-            @click="functionFilter = 'disabled'"
+            @click="setFnFilter('disabled')"
           />
         </div>
         <UEmpty
