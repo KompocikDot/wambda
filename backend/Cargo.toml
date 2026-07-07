@@ -7,14 +7,10 @@ edition = "2024"
 axum = { version = "0.8.9", features = ["macros", "multipart"] }
 chrono = "0.4.45"
 dotenv = "0.15.0"
-migration = { path = "migration" }
 rust-s3 = "0.37.2"
-sea-orm = { version = "^2.0.0-rc", features = ["sqlx-postgres", "macros", "with-time", "with-json", "runtime-tokio-native-tls"] }
+sea-orm = { version = "2.0.0-rc.34", features = ["sqlx-postgres", "macros", "with-time", "with-json", "runtime-tokio-native-tls", "schema-sync", "entity-registry"] }
 serde = { version = "1.0.228", features = ["derive", "std"] }
 tokio = { version = "1.52.3", features = ["full"] }
 uuid = { version = "1.23.4", features = ["v7"] }
 wasmtime = "44.0.3"
 wasmtime-wasi = "44.0.3"
-
-[workspace]
-members = [".", "migration"]
