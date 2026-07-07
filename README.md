@@ -5,6 +5,9 @@
 - cargo
 - npm/npx
 
+## TODOs
+- Add function to measure password strength ? [dropbox zxcvbn](https://github.com/shssoichiro/zxcvbn-rs)
+
 ## DB Schema
 
 ```mermaid
