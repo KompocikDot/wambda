@@ -1,6 +1,8 @@
+use anyhow::Result;
 use s3::{Bucket, BucketConfiguration, Region, creds::Credentials};
-use sea_orm::{Database, DatabaseConnection, DbErr};
+use sea_orm::{Database, DatabaseConnection};
 use std::{env, sync::Arc};
+use wasmtime::error::Context;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -9,7 +11,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self, DbErr> {
+    pub async fn new() -> Result<Self> {
         let pool = Database::connect(format!(
             "postgresql://{user}:{pass}@{hostname}:{port}/{db}",
             user = env::var("POSTGRES_USER").unwrap_or_default(),
@@ -30,22 +32,19 @@ impl AppState {
             None,     // set security_token
             None,     // session token NOTE: Should it be set?
             None,
-        )
-        .unwrap();
+        )?;
 
-        match Bucket::create_with_path_style(
+        Bucket::create_with_path_style(
             "binaries",
             region.clone(),
             credentials.clone(),
             BucketConfiguration::default(),
         )
-        .await {
-            Ok(_) => (),
-            Err(_) => ()
-        }
+        .await
+        .context("could not create binaries bucket")?;
 
         let blob_bucket = Bucket::new("binaries", region, credentials)
-            .unwrap()
+            .context("could not create binaries bucket client")?
             .with_path_style();
 
         return Ok(Self {
