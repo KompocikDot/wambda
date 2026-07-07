@@ -16,7 +16,8 @@ struct ErrorPayload {
 
 pub enum AppError {
     Internal(anyhow::Error),
-    Validation(Value),
+    InvalidRequest(Value),
+    NotFound,
 }
 
 impl IntoResponse for AppError {
@@ -30,10 +31,15 @@ impl IntoResponse for AppError {
                     None,
                 )
             }
-            AppError::Validation(validation_err) => (
+            AppError::InvalidRequest(validation_err) => (
                 StatusCode::BAD_REQUEST,
                 "Invalid request data".to_string(),
                 Some(validation_err),
+            ),
+            AppError::NotFound => (
+                StatusCode::NOT_FOUND,
+                "Resource not found".to_string(),
+                None,
             ),
         };
 

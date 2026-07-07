@@ -45,3 +45,17 @@ pub struct RegisterUserPayload {
 pub struct RegisterUserResponse {
     pub id: i32,
 }
+
+#[derive(Validate, Deserialize)]
+pub struct LoginUserPayload {
+    #[validate(email)]
+    pub email: String,
+    #[validate(length(min = 8, max = 64))]
+    pub password: String,
+}
+
+#[derive(Serialize)]
+pub struct LoginUserResponse {
+    pub email: String,
+    pub full_name: String,
+}

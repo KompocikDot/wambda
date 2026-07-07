@@ -1,13 +1,13 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use s3::{Bucket, BucketConfiguration, Region, creds::Credentials};
 use sea_orm::{Database, DatabaseConnection};
 use std::{env, sync::Arc};
-use wasmtime::error::Context;
 
 #[derive(Clone)]
 pub struct AppState {
     pub db: DatabaseConnection,
     pub blob_bucket: Arc<Bucket>,
+    pub debug_mode: bool,
 }
 
 impl AppState {
@@ -34,22 +34,29 @@ impl AppState {
             None,
         )?;
 
-        Bucket::create_with_path_style(
+        let blob_bucket =
+            Bucket::new("binaries", region.clone(), credentials.clone())?.with_path_style();
+
+        if let Err(e) = Bucket::create_with_path_style(
             "binaries",
             region.clone(),
             credentials.clone(),
             BucketConfiguration::default(),
         )
         .await
-        .context("could not create binaries bucket")?;
+        {
+            let err_msg = e.to_string();
+            if !(err_msg.contains("BucketAlreadyOwnedByYou") || err_msg.contains("409")) {
+                return Err(e).context("failed to handle binaries bucket creation");
+            }
+        }
 
-        let blob_bucket = Bucket::new("binaries", region, credentials)
-            .context("could not create binaries bucket client")?
-            .with_path_style();
+        let debug_mode = env::var_os("DEBUG").unwrap_or_default() == "1";
 
         return Ok(Self {
             db: pool,
             blob_bucket: Arc::from(blob_bucket),
+            debug_mode,
         });
     }
 }
