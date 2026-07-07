@@ -4,33 +4,20 @@ use axum::{
     Json, Router,
     extract::{Multipart, State},
     http::StatusCode,
-    response::Response,
     routing::post,
 };
 
-use chrono::Utc;
-use migration::{Migrator, MigratorTrait};
 use serde::Deserialize;
 
 mod convert;
 mod executor;
-mod orm;
+mod models;
 mod state;
 
-use crate::{
-    convert::{WasmtimeVal, from_json},
-    orm::runs,
-};
+use crate::convert::{WasmtimeVal, from_json};
 use executor::execute_wasm;
-use sea_orm::{ActiveModelTrait, ActiveValue};
 use state::AppState;
 use uuid::Uuid;
-
-#[derive(Deserialize)]
-struct AddbinaryPayload {
-    args_types: Vec<String>,
-    return_types: Vec<String>,
-}
 
 #[derive(Deserialize)]
 struct RunPayload {
@@ -52,7 +39,12 @@ async fn main() {
         }
     };
 
-    Migrator::up(&state.db, None).await.unwrap();
+    state
+        .db
+        .get_schema_registry(module_path!().split("::").next().unwrap())
+        .sync(&state.db)
+        .await
+        .unwrap();
 
     let app = Router::new()
         .route("/run", post(run))
@@ -94,7 +86,7 @@ async fn create_function(
 }
 
 async fn run(State(state): State<Arc<AppState>>, Json(payload): Json<RunPayload>) -> &'static str {
-    let start_time = ActiveValue::Set(Utc::now().into());
+    // let start_time = ActiveValue::Set(Utc::now().into());
     let binary = state
         .blob_bucket
         .get_object(payload.binary_id)
@@ -108,14 +100,14 @@ async fn run(State(state): State<Arc<AppState>>, Json(payload): Json<RunPayload>
 
     let out = execute_wasm(binary.as_slice(), args.as_slice()).unwrap();
     println!("{:?}", out);
-    let finish_time = ActiveValue::Set(Utc::now().into());
+    // let finish_time = ActiveValue::Set(Utc::now().into());
 
-    let new_run = runs::ActiveModel {
-        start_time,
-        finish_time,
-        ..Default::default()
-    };
+    // let new_run = runs::ActiveModel {
+    //     start_time,
+    //     finish_time,
+    //     ..Default::default()
+    // };
 
-    new_run.insert(&state.db).await.unwrap();
+    // new_run.insert(&state.db).await.unwrap();
     "hi, world!"
 }
