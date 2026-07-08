@@ -7,6 +7,8 @@
 
 ## TODOs
 - Add function to measure password strength ? [dropbox zxcvbn](https://github.com/shssoichiro/zxcvbn-rs)
+- Add env vars encyption
+- Add api keys table
 
 ## DB Schema
 

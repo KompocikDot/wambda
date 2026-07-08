@@ -15,14 +15,16 @@ struct ErrorPayload {
 }
 
 pub enum AppError {
+    Unauthorized,
     Internal(anyhow::Error),
     InvalidRequest(Value),
-    NotFound,
+    NotFound
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, msg, details) = match self {
+            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string(), None),
             AppError::Internal(inner_err) => {
                 tracing::error!("Internal server error: {:?}", inner_err);
                 (
