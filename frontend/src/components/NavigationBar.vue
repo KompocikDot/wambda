@@ -2,6 +2,7 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import FaasmLogo from './FaasmLogo.vue'
 
 const router = useRouter()
 
@@ -22,7 +23,7 @@ const items = ref<NavigationMenuItem[]>([
   <UHeader>
     <template #title>
       <div class="flex gap-x-1 items-center">
-        <Logo />
+        <FaasmLogo />
         <div>FAASM</div>
       </div>
     </template>
@@ -31,8 +32,8 @@ const items = ref<NavigationMenuItem[]>([
 
     <template #right>
       <div class="flex gap-x-1">
-        <UButton variant="ghost" :to="{ name: 'dashboard' }">Sign In</UButton>
-        <UButton>Get started</UButton>
+        <UButton variant="ghost" :to="{ name: 'login' }">Sign In</UButton>
+        <UButton :to="{ name: 'register' }">Get started</UButton>
         <UColorModeButton />
       </div>
     </template>

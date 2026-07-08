@@ -31,6 +31,7 @@ fn validate_password(password: &str) -> Result<(), ValidationError> {
 }
 
 #[derive(Validate, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterUserPayload {
     #[validate(length(min = 1, max = 255))]
     pub full_name: String,
@@ -42,11 +43,13 @@ pub struct RegisterUserPayload {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterUserResponse {
     pub id: i32,
 }
 
 #[derive(Validate, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginUserPayload {
     #[validate(email)]
     pub email: String,
@@ -55,6 +58,7 @@ pub struct LoginUserPayload {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginUserResponse {
     pub email: String,
     pub full_name: String,

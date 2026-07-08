@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use axum::body::Bytes;
 use axum_typed_multipart::{FieldData, TryFromField, TryFromMultipart};
-use base64::engine::{Engine, general_purpose::STANDARD as B64};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
@@ -71,11 +70,13 @@ pub struct CreateFunctionPayload {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateFunctionResponse {
     pub uuid: Uuid,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FunctionResponse {
     pub uuid: Uuid,
     pub name: String,
@@ -113,6 +114,7 @@ impl From<FunctionModel> for FunctionResponse {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListFunctionsResponse {
     pub functions: Vec<FunctionResponse>,
 }
