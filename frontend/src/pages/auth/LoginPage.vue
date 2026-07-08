@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import FaasmLogo from '@/components/FaasmLogo.vue'
 import { $api } from '@/composables/useAPI'
-import { loginFormSchema, type LoginFormState } from '@/schemas.ts/auth'
+import {
+  loginFormSchema,
+  type LoginErrorResponse,
+  type LoginFormState,
+  type LoginUserResponse,
+} from '@/schemas.ts/auth'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import type { FetchError } from 'ofetch'
 
 const { setAuth } = useAuth()
 const router = useRouter()
+
+const loginError = ref('')
 
 const state = reactive<LoginFormState>({
   email: '',
@@ -16,8 +24,10 @@ const state = reactive<LoginFormState>({
 })
 
 const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
+  loginError.value = ''
+
   try {
-    await $api('/auth/login', {
+    await $api<LoginUserResponse | LoginErrorResponse>('/auth/login', {
       method: 'POST',
       body: {
         email: event.data.email,
@@ -28,7 +38,11 @@ const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
     setAuth(true)
     router.replace({ name: 'dashboard' })
   } catch (e) {
-    console.error(e)
+    const errData = (e as FetchError).data as LoginErrorResponse
+    const globalErr = errData.details?.global
+    if (globalErr) {
+      loginError.value = globalErr
+    }
   }
 }
 </script>
@@ -39,6 +53,14 @@ const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
     <h1 class="text-2xl font-bold">Sign in to FAASM</h1>
     <h2 class="text-sm text-muted">Deploy and run you WASM functions.</h2>
     <UCard variant="outline">
+      <UAlert
+        v-if="loginError"
+        :description="loginError"
+        class="mb-2"
+        variant="subtle"
+        color="error"
+        icon="i-lucide-circle-x"
+      />
       <UForm
         class="flex flex-col gap-y-2 w-80"
         @submit="onSubmit"

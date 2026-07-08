@@ -11,6 +11,18 @@ export type RegisterUserResponse = {
   uuid: string
 }
 
+export type LoginUserResponse = {
+  fullName: string
+  email: string
+}
+
+export type LoginErrorResponse = {
+  msg: string
+  error: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  details?: Record<string, any>
+}
+
 const isValidPassword = (password: string): boolean => {
   let containsUppercase = false
   let containsLowercase = false
