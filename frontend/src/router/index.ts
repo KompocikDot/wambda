@@ -7,6 +7,8 @@ import SettingsPage from '@/pages/dashboard/SettingsPage.vue'
 import SingleFunctionPage from '@/pages/dashboard/functions/SingleFunctionPage.vue'
 import NotFoundPage from '@/pages/404Page.vue'
 import SingleRunPage from '@/pages/dashboard/runs/SingleRunPage.vue'
+import LoginPage from '@/pages/auth/LoginPage.vue'
+import RegisterPage from '@/pages/auth/RegisterPage.vue'
 
 const routes = [
   {
@@ -14,6 +16,8 @@ const routes = [
     component: MainPage,
     name: 'main',
   },
+  { path: '/login', component: LoginPage, name: 'login' },
+  { path: '/register', component: RegisterPage, name: 'register' },
   {
     path: '/dashboard',
     component: DashboardPage,

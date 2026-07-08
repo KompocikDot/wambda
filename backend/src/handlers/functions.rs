@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::{
@@ -9,7 +9,6 @@ use axum::{
     routing::{get, post},
 };
 use axum_typed_multipart::TypedMultipart;
-use base64::engine::{Engine, general_purpose::STANDARD as B64};
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
@@ -17,9 +16,7 @@ use crate::{
     errors::AppError,
     exctractors::AuthUser,
     models::function::{self, Entity as Function},
-    schemas::functions::{
-        CreateFunctionPayload, CreateFunctionResponse, FunctionResponse, ListFunctionsResponse,
-    },
+    schemas::functions::{CreateFunctionPayload, CreateFunctionResponse, ListFunctionsResponse},
     state::AppState,
 };
 
@@ -28,19 +25,6 @@ pub fn functions_router() -> Router<Arc<AppState>> {
         .route("/", get(list_functions))
         .route("/", post(create_function))
         .layer(from_extractor::<AuthUser>());
-}
-
-fn stringify_envs(envs: HashMap<String, String>) -> String {
-    // encrypt these values somehow - maybe with user's api key?
-    let mut stringified_envs = String::new();
-    for (k, v) in envs {
-        stringified_envs.push_str(&B64.encode(&k));
-        stringified_envs.push_str(":");
-        stringified_envs.push_str(&B64.encode(&v));
-        stringified_envs.push_str(",");
-    }
-
-    return stringified_envs;
 }
 
 async fn create_function(
