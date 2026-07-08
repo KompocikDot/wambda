@@ -1,7 +1,9 @@
 use axum::{
     Json,
-    extract::{FromRequest, Request},
+    extract::{FromRequest, FromRequestParts, Request},
+    http::request::Parts,
 };
+use tower_sessions::Session;
 use validator::Validate;
 
 use crate::errors::AppError;
@@ -28,5 +30,30 @@ where
         })?;
 
         Ok(ValidatedJson(value))
+    }
+}
+
+#[derive(Clone)]
+pub struct AuthUser {
+    pub id: i32,
+}
+
+impl<S> FromRequestParts<S> for AuthUser
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let session = Session::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AppError::Internal(anyhow::anyhow!("Session missing")))?;
+
+        let user_id: Option<i32> = session.get("user_id").await.unwrap_or(None);
+
+        match user_id {
+            Some(id) => Ok(AuthUser { id }),
+            None => Err(AppError::Unauthorized),
+        }
     }
 }

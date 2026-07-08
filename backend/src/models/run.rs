@@ -15,7 +15,7 @@ pub enum Status {
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub triggered_ad: ChronoUnixTimestampMillis,
+    pub triggered_at: ChronoUnixTimestampMillis,
     pub finish_time: ChronoUnixTimestampMillis,
     #[sea_orm(unique)]
     pub uuid: Uuid,

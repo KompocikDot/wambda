@@ -18,6 +18,7 @@ use tower_sessions_cookie_store::{CookieSessionConfig, CookieSessionManagerLayer
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+use crate::handlers::functions::functions_router;
 use crate::handlers::users::users_router;
 
 #[tokio::main]
@@ -59,6 +60,7 @@ async fn main() -> Result<()> {
 
     let app = Router::new()
         .nest("/api/auth", users_router())
+        .nest("/api/functions", functions_router())
         .with_state(state)
         .layer(CookieSessionManagerLayer::signed(secret).with_config(session_config));
 

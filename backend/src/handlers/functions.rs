@@ -1,53 +1,91 @@
-// async fn create_function(
-//     State(state): State<Arc<AppState>>,
-//     mut multipart: Multipart,
-// ) -> StatusCode {
-//     while let Some(field) = multipart.next_field().await.unwrap() {
-//         if field.name() == Some("wasm") {
-//             let data = field.bytes().await.unwrap();
-//             let blob_uuid = Uuid::now_v7().to_string();
+use std::{collections::HashMap, sync::Arc};
 
-//             let insert = state
-//                 .blob_bucket
-//                 .put_object(&blob_uuid, &data.to_vec())
-//                 .await;
+use anyhow::{Context, Result};
+use axum::{
+    Extension, Json, Router,
+    extract::State,
+    http::StatusCode,
+    middleware::from_extractor,
+    routing::{get, post},
+};
+use axum_typed_multipart::TypedMultipart;
+use base64::engine::{Engine, general_purpose::STANDARD as B64};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter};
+use uuid::Uuid;
 
-//             return match insert {
-//                 Ok(_) => StatusCode::CREATED,
-//                 Err(err) => {
-//                     eprintln!("{err}");
-//                     StatusCode::INTERNAL_SERVER_ERROR
-//                 }
-//             };
-//         }
-//     }
+use crate::{
+    errors::AppError,
+    exctractors::AuthUser,
+    models::function::{self, Entity as Function},
+    schemas::functions::{
+        CreateFunctionPayload, CreateFunctionResponse, FunctionResponse, ListFunctionsResponse,
+    },
+    state::AppState,
+};
 
-//     return StatusCode::BAD_REQUEST;
-// }
+pub fn functions_router() -> Router<Arc<AppState>> {
+    return Router::new()
+        .route("/", get(list_functions))
+        .route("/", post(create_function))
+        .layer(from_extractor::<AuthUser>());
+}
 
-// async fn run(State(state): State<Arc<AppState>>, Json(payload): Json<RunPayload>) -> &'static str {
-//     // let start_time = ActiveValue::Set(Utc::now().into());
-//     let binary = state
-//         .blob_bucket
-//         .get_object(payload.binary_id)
-//         .await
-//         .unwrap();
+fn stringify_envs(envs: HashMap<String, String>) -> String {
+    // encrypt these values somehow - maybe with user's api key?
+    let mut stringified_envs = String::new();
+    for (k, v) in envs {
+        stringified_envs.push_str(&B64.encode(&k));
+        stringified_envs.push_str(":");
+        stringified_envs.push_str(&B64.encode(&v));
+        stringified_envs.push_str(",");
+    }
 
-//     let mut args = Vec::new();
-//     for arg in payload.fn_args {
-//         args.push(from_json(arg));
-//     }
+    return stringified_envs;
+}
 
-//     let out = execute_wasm(binary.as_slice(), args.as_slice()).unwrap();
-//     println!("{:?}", out);
-//     // let finish_time = ActiveValue::Set(Utc::now().into());
+async fn create_function(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<AuthUser>,
+    payload: TypedMultipart<CreateFunctionPayload>,
+) -> Result<(StatusCode, Json<CreateFunctionResponse>), AppError> {
+    let uuid = Uuid::now_v7();
 
-//     // let new_run = runs::ActiveModel {
-//     //     start_time,
-//     //     finish_time,
-//     //     ..Default::default()
-//     // };
+    let new_fn = function::ActiveModel {
+        name: Set(payload.name.clone()),
+        uuid: Set(uuid),
+        language: Set(payload.language.clone().into()),
+        trigger: Set(payload.trigger.clone().into()),
+        memory_limit: Set(payload.memory_limit),
+        timeout: Set(payload.timeout),
+        envs: Set(payload.envs_stringified.clone()),
+        owner_id: Set(user.id),
+        ..Default::default()
+    };
 
-//     // new_run.insert(&state.db).await.unwrap();
-//     "hi, world!"
-// }
+    new_fn
+        .insert(&state.db)
+        .await
+        .context("could not insert function in the db")?;
+
+    state
+        .blob_bucket
+        .put_object(uuid.to_string(), &payload.wasm.contents)
+        .await
+        .context("could not write wasm to bucket")?;
+
+    Ok((StatusCode::CREATED, Json(CreateFunctionResponse { uuid })))
+}
+
+#[axum::debug_handler]
+async fn list_functions(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<AuthUser>,
+) -> Result<(StatusCode, Json<ListFunctionsResponse>), AppError> {
+    let functions = Function::find()
+        .filter(function::COLUMN.owner_id.eq(user.id))
+        .all(&state.db)
+        .await
+        .context("could not retrieve functions")?;
+
+    Ok((StatusCode::OK, Json(functions.into())))
+}

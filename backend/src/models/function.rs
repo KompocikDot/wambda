@@ -1,4 +1,8 @@
+use std::collections::HashMap;
+
 use sea_orm::entity::prelude::*;
+
+use crate::schemas::functions::{Language as SchemaLanguage, Trigger};
 
 #[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "language")]
@@ -13,6 +17,17 @@ pub enum Language {
     Rust,
 }
 
+impl From<SchemaLanguage> for Language {
+    fn from(value: SchemaLanguage) -> Self {
+        match value {
+            SchemaLanguage::C => Self::C,
+            SchemaLanguage::Go => Self::Go,
+            SchemaLanguage::Python => Self::Python,
+            SchemaLanguage::Rust => Self::Rust,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "trigger_type")]
 pub enum TriggerType {
@@ -22,6 +37,15 @@ pub enum TriggerType {
     Cron,
 }
 
+impl From<Trigger> for TriggerType {
+    fn from(value: Trigger) -> Self {
+        match value {
+            Trigger::HTTP => Self::HTTP,
+            Trigger::Cron => Self::Cron,
+        }
+    }
+}
+
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "functions")]
@@ -29,6 +53,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub name: String,
+    #[sea_orm(unique)]
     pub uuid: Uuid,
     pub language: Language,
     pub trigger: TriggerType,
