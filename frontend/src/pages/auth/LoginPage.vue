@@ -1,5 +1,36 @@
 <script setup lang="ts">
 import FaasmLogo from '@/components/FaasmLogo.vue'
+import { $api } from '@/composables/useAPI'
+import { loginFormSchema, type LoginFormState } from '@/schemas.ts/auth'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import { reactive } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
+
+const { setAuth } = useAuth()
+const router = useRouter()
+
+const state = reactive<LoginFormState>({
+  email: '',
+  password: '',
+})
+
+const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
+  try {
+    await $api('/auth/login', {
+      method: 'POST',
+      body: {
+        email: event.data.email,
+        password: event.data.password,
+      },
+    })
+
+    setAuth(true)
+    router.replace({ name: 'dashboard' })
+  } catch (e) {
+    console.error(e)
+  }
+}
 </script>
 
 <template>
@@ -8,12 +39,17 @@ import FaasmLogo from '@/components/FaasmLogo.vue'
     <h1 class="text-2xl font-bold">Sign in to FAASM</h1>
     <h2 class="text-sm text-muted">Deploy and run you WASM functions.</h2>
     <UCard variant="outline">
-      <UForm class="flex flex-col gap-y-2 w-80">
-        <UFormField label="Email">
-          <UInput type="email" class="w-full" />
+      <UForm
+        class="flex flex-col gap-y-2 w-80"
+        @submit="onSubmit"
+        :schema="loginFormSchema"
+        :state="state"
+      >
+        <UFormField label="Email" name="email">
+          <UInput type="email" class="w-full" v-model="state.email" />
         </UFormField>
-        <UFormField label="Password">
-          <UInput type="password" class="w-full" />
+        <UFormField label="Password" name="password">
+          <UInput type="password" class="w-full" v-model="state.password" />
         </UFormField>
         <UButton label="Sign In" type="submit" class="w-full justify-center mt-4" />
       </UForm>

@@ -64,3 +64,17 @@ export const registerFormSchema = v.pipe(
 )
 
 export type RegisterFormState = v.InferInput<typeof registerFormSchema>
+
+export const loginFormSchema = v.object({
+  email: v.pipe(v.string(), v.email('Please enter a valid email address')),
+
+  password: v.pipe(
+    v.string(),
+    v.check(
+      isValidPassword,
+      'Password should contain at least one lowercase and uppercase character, one number and one special character',
+    ),
+  ),
+})
+
+export type LoginFormState = v.InferInput<typeof loginFormSchema>
