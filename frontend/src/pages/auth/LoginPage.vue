@@ -6,14 +6,17 @@ import {
   type LoginErrorResponse,
   type LoginFormState,
   type LoginUserResponse,
+  type User,
 } from '@/schemas.ts/auth'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { reactive, ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
 import type { FetchError } from 'ofetch'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 const { setAuth } = useAuth()
+const userStorage = useLocalStorage<User | null>('user', null, true)
 const router = useRouter()
 
 const loginError = ref('')
@@ -27,7 +30,7 @@ const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
   loginError.value = ''
 
   try {
-    await $api<LoginUserResponse | LoginErrorResponse>('/auth/login', {
+    const user = await $api<LoginUserResponse | LoginErrorResponse>('/auth/login', {
       method: 'POST',
       body: {
         email: event.data.email,
@@ -35,7 +38,9 @@ const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
       },
     })
 
+    userStorage.value = user as LoginUserResponse
     setAuth(true)
+
     router.replace({ name: 'dashboard' })
   } catch (e) {
     const errData = (e as FetchError).data as LoginErrorResponse

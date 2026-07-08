@@ -4,12 +4,19 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useColorMode } from '@vueuse/core'
 import FaasmLogo from '../FaasmLogo.vue'
+import { useAuth } from '@/composables/useAuth'
+import { useLocalStorage } from '@/composables/useLocalStorage'
+import type { User } from '@/schemas.ts/auth'
 
 const route = useRoute()
 const router = useRouter()
 const colorMode = useColorMode()
+const userStorage = useLocalStorage<User | null>('user', null, true)
+const { setAuth } = useAuth()
 
 const logout = () => {
+  userStorage.value = null
+  setAuth(false)
   router.push({ name: 'main' })
 }
 
@@ -119,7 +126,11 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
         :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-48' }"
       >
         <template #colorpicker></template>
-        <UUser class="w-full" name="John Doe" description="Software Engineer" />
+        <UUser
+          class="w-full"
+          :name="userStorage?.fullName"
+          :description="userStorage?.email ?? 'UNKNOWN'"
+        />
       </UDropdownMenu>
     </template>
   </UDashboardSidebar>

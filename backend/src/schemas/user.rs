@@ -45,7 +45,8 @@ pub struct RegisterUserPayload {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RegisterUserResponse {
-    pub id: i32,
+    pub email: String,
+    pub full_name: String,
 }
 
 #[derive(Validate, Deserialize)]

@@ -6,12 +6,15 @@ import {
   registerFormSchema,
   type RegisterFormState,
   type RegisterUserResponse,
+  type User,
 } from '@/schemas.ts/auth'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 const router = useRouter()
+const userStorage = useLocalStorage<User | null>('user', null, true)
 const { setAuth } = useAuth()
 
 const state = reactive<RegisterFormState>({
@@ -23,7 +26,7 @@ const state = reactive<RegisterFormState>({
 
 const onSubmit = async (event: FormSubmitEvent<RegisterFormState>) => {
   try {
-    await $api<RegisterUserResponse>('/auth/register', {
+    const user = await $api<RegisterUserResponse>('/auth/register', {
       method: 'POST',
       body: {
         fullName: event.data.fullName,
@@ -32,7 +35,9 @@ const onSubmit = async (event: FormSubmitEvent<RegisterFormState>) => {
       },
     })
 
+    userStorage.value = user
     setAuth(true)
+
     router.replace({ name: 'dashboard' })
   } catch (e) {
     console.error(e)

@@ -45,15 +45,17 @@ async fn register_user(
         ..Default::default()
     };
 
-    let new_id = new_user
+    let user = new_user
         .insert(&state.db)
         .await
-        .context("could not insert user into the db")?
-        .id;
+        .context("could not insert user into the db")?;
 
     return Ok((
         StatusCode::CREATED,
-        Json(RegisterUserResponse { id: new_id }),
+        Json(RegisterUserResponse {
+            email: user.email,
+            full_name: user.full_name,
+        }),
     ));
 }
 

@@ -1,5 +1,10 @@
 import * as v from 'valibot'
 
+export type User = {
+  fullName: string
+  email: string
+}
+
 export type RegisterUserState = {
   fullName: string
   email: string
@@ -8,7 +13,8 @@ export type RegisterUserState = {
 }
 
 export type RegisterUserResponse = {
-  uuid: string
+  fullName: string
+  email: string
 }
 
 export type LoginUserResponse = {
