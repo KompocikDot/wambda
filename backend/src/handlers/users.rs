@@ -71,7 +71,7 @@ async fn login_user(
             tracing::error!("get user error: {:?}", db_err);
             AppError::Internal(anyhow!("user get database error"))
         })?
-        .ok_or_else(|| AppError::InvalidRequest(json!({"global": "invalid email or password"})))?;
+        .ok_or_else(|| AppError::InvalidRequest(json!({"global": "Invalid email or password."})))?;
 
     let passwords_identical = Argon2::default().verify_password(
         payload.password.as_ref(),

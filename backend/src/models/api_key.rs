@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "functions")]
+#[sea_orm(table_name = "api_keys")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,

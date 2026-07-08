@@ -3,6 +3,7 @@ use axum::{
     extract::{FromRequest, FromRequestParts, Request},
     http::request::Parts,
 };
+use serde_json::json;
 use tower_sessions::Session;
 use validator::Validate;
 
@@ -20,9 +21,14 @@ where
     type Rejection = AppError;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
-        let Json(value) = Json::<T>::from_request(req, state)
-            .await
-            .map_err(|e| AppError::Internal(anyhow::anyhow!("JSON Parse error: {}", e)))?;
+        let Json(value) = Json::<T>::from_request(req, state).await.map_err(|e| {
+            let error_payload = json!({
+                "error": "Invalid JSON payload",
+                "details": e.to_string()
+            });
+
+            AppError::InvalidRequest(error_payload)
+        })?;
 
         value.validate().map_err(|e| {
             let error_details = serde_json::to_value(&e).unwrap_or(serde_json::json!({}));
