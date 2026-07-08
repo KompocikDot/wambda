@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainPage from '../pages/MainPage.vue'
-import DashboardPage from '@/pages/DashboardPage.vue'
-import FunctionsPage from '@/pages/FunctionsPage.vue'
-import RunsPage from '@/pages/RunsPage.vue'
-import SettingsPage from '@/pages/SettingsPage.vue'
-import SingleFunctionPage from '@/pages/SingleFunctionPage.vue'
+import DashboardPage from '@/pages/dashboard/DashboardPage.vue'
+import FunctionsPage from '@/pages/dashboard/functions/FunctionsPage.vue'
+import RunsPage from '@/pages/dashboard/runs/RunsPage.vue'
+import SettingsPage from '@/pages/dashboard/SettingsPage.vue'
+import SingleFunctionPage from '@/pages/dashboard/functions/SingleFunctionPage.vue'
 import NotFoundPage from '@/pages/404Page.vue'
-import SingleRunPage from '@/pages/SingleRunPage.vue'
+import SingleRunPage from '@/pages/dashboard/runs/SingleRunPage.vue'
 
 const routes = [
   {
