@@ -125,7 +125,7 @@ const setFnFilter = (value: string) => {
 }
 
 const onRowClick = (_: Event, row: TableRow<Function>) => {
-  router.push({ name: 'singleFunction', params: { id: row.getValue<string>('name') } })
+  router.push({ name: 'singleFunction', params: { uuid: row.getValue<string>('name') } })
 }
 </script>
 

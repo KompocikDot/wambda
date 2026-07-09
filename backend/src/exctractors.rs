@@ -4,7 +4,7 @@ use axum::{
     http::request::Parts,
 };
 use serde_json::json;
-use tower_sessions::Session;
+use tower_sessions_cookie_store::Session;
 use validator::Validate;
 
 use crate::errors::AppError;

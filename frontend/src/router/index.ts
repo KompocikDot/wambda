@@ -32,7 +32,7 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/functions/:id',
+    path: '/functions/:uuid',
     component: SingleFunctionPage,
     name: 'singleFunction',
     meta: { requiresAuth: true },

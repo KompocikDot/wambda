@@ -7,7 +7,7 @@ import {
   type RegisterFormState,
   type RegisterUserResponse,
   type User,
-} from '@/schemas.ts/auth'
+} from '@/schemas/auth'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -58,16 +58,16 @@ const onSubmit = async (event: FormSubmitEvent<RegisterFormState>) => {
         :schema="registerFormSchema"
         @error="(e) => console.log(e)"
       >
-        <UFormField label="Full name" name="fullName">
+        <UFormField label="Full name" name="fullName" required>
           <UInput type="text" class="w-full" v-model="state.fullName" />
         </UFormField>
-        <UFormField label="Email" name="email">
+        <UFormField label="Email" name="email" required>
           <UInput type="email" class="w-full" v-model="state.email" />
         </UFormField>
-        <UFormField label="Password" name="password">
+        <UFormField label="Password" name="password" required>
           <UInput type="password" class="w-full" v-model="state.password" />
         </UFormField>
-        <UFormField label="Confirm password" name="repeatPassword">
+        <UFormField label="Confirm password" name="repeatPassword" required>
           <UInput type="password" class="w-full" v-model="state.repeatPassword" />
         </UFormField>
 

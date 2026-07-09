@@ -7,7 +7,7 @@ import {
   type LoginFormState,
   type LoginUserResponse,
   type User,
-} from '@/schemas.ts/auth'
+} from '@/schemas/auth'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { reactive, ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'

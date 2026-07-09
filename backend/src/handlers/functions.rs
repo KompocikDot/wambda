@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::{
-    Extension, Json, Router,
-    extract::State,
-    http::StatusCode,
-    middleware::from_extractor,
-    routing::{get, post},
+    Json, Router, extract::State, http::StatusCode, middleware::from_extractor, routing::get,
 };
 use axum_typed_multipart::TypedMultipart;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter};
@@ -22,14 +18,13 @@ use crate::{
 
 pub fn functions_router() -> Router<Arc<AppState>> {
     return Router::new()
-        .route("/", get(list_functions))
-        .route("/", post(create_function))
+        .route("/", get(list_functions).post(create_function))
         .layer(from_extractor::<AuthUser>());
 }
 
 async fn create_function(
     State(state): State<Arc<AppState>>,
-    Extension(user): Extension<AuthUser>,
+    user: AuthUser,
     payload: TypedMultipart<CreateFunctionPayload>,
 ) -> Result<(StatusCode, Json<CreateFunctionResponse>), AppError> {
     let uuid = Uuid::now_v7();
@@ -63,7 +58,7 @@ async fn create_function(
 #[axum::debug_handler]
 async fn list_functions(
     State(state): State<Arc<AppState>>,
-    Extension(user): Extension<AuthUser>,
+    user: AuthUser,
 ) -> Result<(StatusCode, Json<ListFunctionsResponse>), AppError> {
     let functions = Function::find()
         .filter(function::COLUMN.owner_id.eq(user.id))

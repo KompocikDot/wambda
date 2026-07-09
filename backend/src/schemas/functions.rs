@@ -57,6 +57,7 @@ impl From<ModelTrigger> for Trigger {
 }
 
 #[derive(Validate, TryFromMultipart)]
+#[try_from_multipart(rename_all = "camelCase")]
 pub struct CreateFunctionPayload {
     pub name: String,
     pub language: Language,
