@@ -1,6 +1,6 @@
-import { ref } from 'vue'
+import { useLocalStorage } from './useLocalStorage'
 
-const isAuthenticated = ref(false)
+const isAuthenticated = useLocalStorage<boolean>("isAuthenticated", false)
 
 export const useAuth = () => {
   const setAuth = (status: boolean) => {
