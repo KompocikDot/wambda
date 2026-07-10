@@ -132,7 +132,7 @@ onMounted(() => {
           />
         </template>
       </UDashboardNavbar>
-      <UDashboardPanel class="px-6 py-4 gap-y-4">
+      <UDashboardPanel class="px-6 py-4 gap-y-4 flex flex-col min-h-0 h-full w-full">
         <div class="flex gap-x-2">
           <UInput
             icon="i-lucide-search"
@@ -192,6 +192,7 @@ onMounted(() => {
           :loading="loading"
           :columns="columns"
           @select="onRowClick"
+          class="h-full"
         />
       </UDashboardPanel>
     </div>

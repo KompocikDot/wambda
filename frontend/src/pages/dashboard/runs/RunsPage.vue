@@ -138,7 +138,7 @@ const onRowClick = (_: Event, row: TableRow<Function>) => {
     ><SidebarPanel />
     <div class="flex flex-col w-full h-full">
       <UDashboardNavbar title="Runs" icon="i-lucide-play" class="w-full" />
-      <UDashboardPanel class="px-6 py-4 gap-y-4">
+      <UDashboardPanel class="px-6 py-4 gap-y-4 flex flex-col min-h-0 h-full w-full">
         <div class="flex gap-x-2">
           <UInput
             icon="i-lucide-search"
