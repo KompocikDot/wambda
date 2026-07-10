@@ -60,7 +60,7 @@ pub struct Model {
     pub envs: String,
 
     pub owner_id: i32,
-    #[sea_orm(belongs_to, from = "owner_id", to = "id")]
+    #[sea_orm(belongs_to, from = "owner_id", to = "id", on_delete="Cascade")]
     pub owner: HasOne<super::user::Entity>,
 
     #[sea_orm(has_many)]

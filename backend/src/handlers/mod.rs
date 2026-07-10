@@ -1,2 +1,3 @@
-pub mod users;
-pub mod functions;
+pub mod auth;
+pub mod function;
+pub mod user;

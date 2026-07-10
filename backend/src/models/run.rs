@@ -22,7 +22,7 @@ pub struct Model {
     pub status: Status,
 
     pub function_id: i32,
-    #[sea_orm(belongs_to, from = "function_id", to = "id")]
+    #[sea_orm(belongs_to, from = "function_id", to = "id", on_delete="Cascade")]
     pub function: HasOne<super::function::Entity>,
 }
 

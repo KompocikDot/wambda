@@ -5,25 +5,32 @@ use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     password_hash::{SaltString, rand_core::OsRng},
 };
-use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter};
+use axum::{
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+    routing::{patch, post},
+};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait};
 use serde_json::json;
 use tower_sessions_cookie_store::Session;
 
 use crate::{
     errors::AppError,
-    exctractors::ValidatedJson,
+    exctractors::{AuthUser, ValidatedJson},
     models::user::{self, Entity as User},
-    schemas::user::{
-        LoginUserPayload, LoginUserResponse, RegisterUserPayload, RegisterUserResponse,
+    schemas::auth::{
+        ChangePasswordPayload, LoginUserPayload, LoginUserResponse, RegisterUserPayload,
+        RegisterUserResponse,
     },
     state::AppState,
 };
 
-pub fn users_router() -> Router<Arc<AppState>> {
+pub fn auth_router() -> Router<Arc<AppState>> {
     return Router::new()
         .route("/register", post(register_user))
-        .route("/login", post(login_user));
+        .route("/login", post(login_user))
+        .route("/change-password", patch(change_password));
 }
 
 async fn register_user(
@@ -64,8 +71,7 @@ async fn login_user(
     session: Session,
     ValidatedJson(payload): ValidatedJson<LoginUserPayload>,
 ) -> Result<(StatusCode, Json<LoginUserResponse>), AppError> {
-    let user = User::find()
-        .filter(user::Column::Email.eq(payload.email))
+    let user = User::find_by_email(payload.email)
         .one(&state.db)
         .await
         .map_err(|db_err| {
@@ -97,4 +103,51 @@ async fn login_user(
             full_name: user.full_name,
         }),
     ));
+}
+
+async fn change_password(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+    Json(payload): Json<ChangePasswordPayload>,
+) -> Result<StatusCode, AppError> {
+    let user = User::find_by_id(user.id)
+        .one(&state.db)
+        .await
+        .map_err(|db_err| {
+            tracing::error!("get user error: {:?}", db_err);
+            AppError::Internal(anyhow!("user get database error"))
+        })?
+        .ok_or_else(|| AppError::Internal(anyhow!("can't get user to update password")))?;
+
+    let argon2 = Argon2::default();
+    let salt = SaltString::generate(&mut OsRng);
+
+    let passwords_identical = argon2.verify_password(
+        payload.current_password.as_ref(),
+        &PasswordHash::new(&user.password).context("")?,
+    );
+
+    if passwords_identical.is_err() {
+        return Err(AppError::InvalidRequest(
+            json!({"global": "sent password do not match current one"}),
+        ));
+    }
+
+    let new_hashed_password = argon2
+        .hash_password(payload.new_password.as_bytes(), &salt)
+        .context("Failed to create hash")?
+        .to_string();
+
+    let model = user::ActiveModel {
+        id: Set(user.id),
+        password: Set(new_hashed_password),
+        ..Default::default()
+    };
+
+    User::update(model)
+        .exec(&state.db)
+        .await
+        .context("could not set new user password")?;
+
+    Ok(StatusCode::NO_CONTENT)
 }

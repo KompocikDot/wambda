@@ -29,7 +29,7 @@ export type LoginErrorResponse = {
   details?: Record<string, any>
 }
 
-const isValidPassword = (password: string): boolean => {
+export const isValidPassword = (password: string): boolean => {
   let containsUppercase = false
   let containsLowercase = false
   let containsNumber = false
