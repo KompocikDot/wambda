@@ -5,19 +5,23 @@ import type { TableColumn, TableRow } from '@nuxt/ui'
 import { computed, h, onMounted, ref, resolveComponent } from 'vue'
 import { useRouter } from 'vue-router'
 
-const UBadge = resolveComponent('UBadge')
-
-const router = useRouter()
-
 type Function = {
   uuid: string
   name: string
   language: string
-  status: string
-  statusColor: string
+  status: 'active' | 'degraded' | 'disabled'
   avgLatencyMs: number | null
   invocations: number
 }
+
+const statusToColour = {
+  active: 'success',
+  degraded: 'muted',
+  disabled: 'warning',
+}
+
+const UBadge = resolveComponent('UBadge')
+const router = useRouter()
 
 const loading = ref<boolean>(false)
 const functions = ref<Function[]>([])
@@ -50,7 +54,7 @@ const columns: TableColumn<Function>[] = [
       return h(UBadge, {
         variant: 'subtle',
         label: capitalizedLabel,
-        color: row.original.statusColor,
+        color: statusToColour[row.original.status] ?? 'primary',
         class: 'rounded-full',
       })
     },
@@ -183,6 +187,7 @@ onMounted(() => {
         <UTable
           v-else
           v-model:global-filter="globalTableFilter"
+          sticky
           :data="filteredFunctions"
           :loading="loading"
           :columns="columns"
