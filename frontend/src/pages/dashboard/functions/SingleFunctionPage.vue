@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { BreadcrumbItem } from '@nuxt/ui'
-import { useTemplateRef } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
 import FunctionForm from '@/components/dashboard/functions/FunctionForm.vue'
 
 const route = useRoute()
 const formRef = useTemplateRef<InstanceType<typeof FunctionForm>>('form')
+const isFormLoading = ref(false)
 
 const breadcrumbItems: BreadcrumbItem[] = [
   {
@@ -36,12 +37,12 @@ const breadcrumbItems: BreadcrumbItem[] = [
         <template #right>
           <div class="flex gap-x-2">
             <UButton label="Cancel" variant="outline" :to="{ name: 'functions' }" />
-            <UButton label="Save changes" @click="formRef?.submit()" />
+            <UButton label="Save changes" @click="formRef?.submit()" :disabled="isFormLoading" />
           </div>
         </template>
       </UDashboardNavbar>
       <UDashboardPanel class="px-6 py-4 gap-y-4">
-        <FunctionForm ref="form" />
+        <FunctionForm ref="form" v-model:loading="isFormLoading" />
       </UDashboardPanel>
     </div>
   </UDashboardGroup>

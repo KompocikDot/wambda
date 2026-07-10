@@ -28,7 +28,7 @@ const triggers = [
 
 const route = useRoute()
 const form = useTemplateRef<HTMLFormElement>('form')
-const loading = ref(false)
+const loading = defineModel<boolean>('loading', { default: false })
 
 const formState = reactive<CreateFunctionInput>({
   name: '',
@@ -143,14 +143,32 @@ onMounted(() => {
   >
     <div class="flex flex-col w-2/3 gap-y-2">
       <UFormField label="Function name" class="w-full" name="name" required>
-        <UInput class="w-full" v-model="formState.name" placeholder="New, unique function name" />
+        <UInput
+          class="w-full"
+          placeholder="New, unique function name"
+          :loading="loading"
+          :disabled="loading"
+          v-model="formState.name"
+        />
       </UFormField>
       <div class="flex gap-x-2">
         <UFormField label="Language" class="w-1/2" name="language" required>
-          <USelect class="w-full" :items="languages" v-model="formState.language" />
+          <USelect
+            class="w-full"
+            :items="languages"
+            :loading="loading"
+            :disabled="loading"
+            v-model="formState.language"
+          />
         </UFormField>
         <UFormField label="Trigger" class="w-1/2" name="trigger" required>
-          <USelect class="w-full" :items="triggers" v-model="formState.trigger" />
+          <USelect
+            class="w-full"
+            :items="triggers"
+            :loading="loading"
+            :disabled="loading"
+            v-model="formState.trigger"
+          />
         </UFormField>
       </div>
       <div class="flex gap-x-2">
@@ -162,6 +180,8 @@ onMounted(() => {
             min="1"
             max="2048"
             placeholder="0"
+            :loading="loading"
+            :disabled="loading"
             v-model="formState.memoryLimit"
           />
         </UFormField>
@@ -172,6 +192,8 @@ onMounted(() => {
             step="1"
             min="0"
             placeholder="0"
+            :loading="loading"
+            :disabled="loading"
             v-model="formState.timeout"
           />
         </UFormField>
@@ -184,17 +206,40 @@ onMounted(() => {
               v-for="(variable, index) in formState.envs"
               :key="index"
             >
-              <UInput class="w-full" v-model="variable.key" />
-              <UInput class="w-full" v-model="variable.value" />
+              <UInput
+                class="w-full"
+                :loading="loading"
+                :disabled="loading"
+                v-model="variable.key"
+              />
+              <UInput
+                class="w-full"
+                :loading="loading"
+                :disabled="loading"
+                v-model="variable.value"
+              />
               <UButton icon="i-lucide-x" variant="outline" @click="removeVariable(index)" />
             </div>
             <div class="flex items-center gap-x-2">
-              <UInput class="w-full" v-model="newEnvVariable.key" placeholder="Key" />
-              <UInput class="w-full" v-model="newEnvVariable.value" placeholder="Value" />
+              <UInput
+                class="w-full"
+                placeholder="Key"
+                :disabled="loading"
+                :loading="loading"
+                v-model="newEnvVariable.key"
+              />
+              <UInput
+                class="w-full"
+                placeholder="Value"
+                :disabled="loading"
+                :loading="loading"
+                v-model="newEnvVariable.value"
+              />
               <UButton
                 icon="i-lucide-x"
                 variant="outline"
                 :disabled="
+                  loading ||
                   formState.envs.length !== 0 ||
                   (newEnvVariable.key === '' && newEnvVariable.value === '')
                 "
@@ -207,7 +252,7 @@ onMounted(() => {
           label="Add variable"
           class="w-fit"
           @click="addVariable"
-          :disabled="newEnvVariable.key.trim() === ''"
+          :disabled="loading || newEnvVariable.key.trim() === ''"
           icon="i-lucide-plus"
           variant="outline"
         />
@@ -221,6 +266,8 @@ onMounted(() => {
           label="Drag & drop your .wasm file"
           description="or click to browse"
           layout="list"
+          :disabled="loading"
+          :loading="loading"
           v-model="formState.wasm"
         />
       </UFormField>
