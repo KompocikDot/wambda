@@ -9,22 +9,9 @@ import {
   type EnvVarInput,
   type EnvVarOutput,
 } from '@/schemas/function'
-import type { BreadcrumbItem, FormSubmitEvent } from '@nuxt/ui'
-import { reactive, useTemplateRef } from 'vue'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import { onMounted, reactive, ref, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const form = useTemplateRef<HTMLFormElement>('form')
-
-const formState = reactive<CreateFunctionInput>({
-  name: '',
-  language: Language.RUST,
-  trigger: Trigger.HTTP,
-  memoryLimit: 32,
-  timeout: 5000,
-  envs: [],
-  wasm: undefined as unknown as File,
-})
 
 const languages = [
   { label: 'C', value: 'c' },
@@ -38,6 +25,20 @@ const triggers = [
   { label: 'HTTP endpoint', value: 'http' },
   { label: 'Cron', value: 'cron' },
 ]
+
+const route = useRoute()
+const form = useTemplateRef<HTMLFormElement>('form')
+const loading = ref(false)
+
+const formState = reactive<CreateFunctionInput>({
+  name: '',
+  language: Language.RUST,
+  trigger: Trigger.HTTP,
+  memoryLimit: 32,
+  timeout: 5000,
+  envs: [],
+  wasm: undefined as unknown as File,
+})
 
 const newEnvVariable = reactive<EnvVarInput>({
   key: '',
@@ -78,7 +79,6 @@ const stringifyEnvVariables = (envs: EnvVarOutput[]): string => {
 }
 
 const onSubmit = async (event: FormSubmitEvent<CreateFunctionOutput>) => {
-  //Route without func uuid is a page from clicking on 'create function' btn
   const newForm = route.params.uuid === 'new'
   const method = newForm ? 'POST' : 'PATCH'
   const endpoint = newForm ? '/functions' : `/functions/${route.params.uuid}`
@@ -103,16 +103,33 @@ const onSubmit = async (event: FormSubmitEvent<CreateFunctionOutput>) => {
   }
 }
 
-const exposedSubmitForm = () => {
-  console.log(form.value)
-  form.value?.submit()
-  // if (nativeForm) {
-  //   nativeForm.requestSubmit()
-  // }
+const onLoad = async () => {
+  loading.value = true
+
+  try {
+    const functionData = await $api(`/functions/${route.params.uuid}`, { credentials: 'include' })
+    formState.name = functionData.name
+    formState.language = functionData.language
+    formState.memoryLimit = functionData.memoryLimit
+    formState.timeout = functionData.timeout
+    formState.trigger = functionData.trigger
+    formState.envs = functionData.envs
+    formState.wasm = functionData.wasm
+  } catch (e) {
+    console.error(e)
+  }
+
+  loading.value = false
 }
 
 defineExpose({
   submit: () => form.value?.submit(),
+})
+
+onMounted(() => {
+  if (route.params.uuid !== undefined && route.params.name !== undefined) {
+    onLoad()
+  }
 })
 </script>
 
@@ -126,7 +143,7 @@ defineExpose({
   >
     <div class="flex flex-col w-2/3 gap-y-2">
       <UFormField label="Function name" class="w-full" name="name" required>
-        <UInput class="w-full" v-model="formState.name" />
+        <UInput class="w-full" v-model="formState.name" placeholder="New, unique function name" />
       </UFormField>
       <div class="flex gap-x-2">
         <UFormField label="Language" class="w-1/2" name="language" required>
@@ -144,11 +161,19 @@ defineExpose({
             step="1"
             min="1"
             max="2048"
+            placeholder="0"
             v-model="formState.memoryLimit"
           />
         </UFormField>
         <UFormField label="Timeout (ms)" class="w-1/2" name="timeout" required>
-          <UInput class="w-full" type="number" step="1" min="0" v-model="formState.timeout" />
+          <UInput
+            class="w-full"
+            type="number"
+            step="1"
+            min="0"
+            placeholder="0"
+            v-model="formState.timeout"
+          />
         </UFormField>
       </div>
       <div class="flex flex-col gap-2">

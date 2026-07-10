@@ -59,7 +59,6 @@ async fn register_user(
     ));
 }
 
-#[axum::debug_handler]
 async fn login_user(
     State(state): State<Arc<AppState>>,
     session: Session,

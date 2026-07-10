@@ -84,7 +84,6 @@ async fn get_function(
     }
 }
 
-#[axum::debug_handler]
 async fn list_functions(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
