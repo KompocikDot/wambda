@@ -8,7 +8,6 @@ use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
 mod errors;
 mod exctractors;
-mod executor;
 mod handlers;
 mod models;
 mod schemas;
