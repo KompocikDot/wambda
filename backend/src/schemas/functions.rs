@@ -84,7 +84,7 @@ pub struct Env {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FunctionResponse {
+pub struct SingleFunctionResponse {
     pub uuid: Uuid,
     pub name: String,
     pub language: Language,
@@ -113,7 +113,7 @@ fn unstringify_envs(stringified_envs: String) -> Vec<Env> {
     return envs;
 }
 
-impl From<FunctionModel> for FunctionResponse {
+impl From<FunctionModel> for SingleFunctionResponse {
     fn from(value: FunctionModel) -> Self {
         Self {
             uuid: value.uuid,

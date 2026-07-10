@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     middleware::from_extractor,
     routing::{get, post},
@@ -21,6 +21,7 @@ use crate::{
     },
     schemas::functions::{
         CreateFunctionPayload, CreateFunctionResponse, MainPageFunctionsResponse,
+        SingleFunctionResponse,
     },
     state::AppState,
 };
@@ -29,6 +30,7 @@ pub fn functions_router() -> Router<Arc<AppState>> {
     return Router::new()
         .route("/", get(list_functions))
         .route("/", post(create_function))
+        .route("/{function_id}", get(get_function))
         .layer(from_extractor::<AuthUser>());
 }
 
@@ -63,6 +65,23 @@ async fn create_function(
         .context("could not write wasm to bucket")?;
 
     Ok((StatusCode::CREATED, Json(CreateFunctionResponse { uuid })))
+}
+
+async fn get_function(
+    State(state): State<Arc<AppState>>,
+    Path(function_id): Path<Uuid>,
+    user: AuthUser,
+) -> Result<(StatusCode, Json<SingleFunctionResponse>), AppError> {
+    let function = Function::find_by_uuid(function_id)
+        .filter(function::COLUMN.owner_id.eq(user.id))
+        .one(&state.db)
+        .await
+        .context("could not get function")?;
+
+    match function {
+        Some(f) => Ok((StatusCode::OK, Json(f.into()))),
+        None => Err(AppError::NotFound),
+    }
 }
 
 #[axum::debug_handler]
