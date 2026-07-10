@@ -32,7 +32,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
     to: '/functions',
   },
   {
-    label: route.params.id as string,
+    label: route.params.name as string,
   },
 ]
 
@@ -126,7 +126,7 @@ const onSubmit = async (event: FormSubmitEvent<CreateFunctionOutput>) => {
                 <span class="text-muted">/</span>
               </template>
             </UBreadcrumb>
-            <div class="text-highlighted font-bold text-xl">{{ $route.params.id }}</div>
+            <div class="text-highlighted font-bold text-xl">{{ $route.params.name }}</div>
           </div>
         </template>
         <template #right>

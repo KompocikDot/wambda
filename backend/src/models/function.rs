@@ -1,5 +1,4 @@
-
-use sea_orm::entity::prelude::*;
+use sea_orm::{ExprTrait, entity::prelude::*};
 
 use crate::schemas::functions::{Language as SchemaLanguage, Trigger};
 
@@ -69,3 +68,21 @@ pub struct Model {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+#[derive(DerivePartialModel)]
+#[sea_orm(entity = "Entity")]
+pub struct MainPageFunctionQuery {
+    pub uuid: Uuid,
+    pub name: String,
+    pub language: Language,
+    #[sea_orm(from_expr = "Expr::val(\"active\")")]
+    pub status: String,
+    #[sea_orm(from_expr = "Expr::col((super::run::Entity, super::run::Column::Id)).count()")]
+    pub invocations: i64,
+    #[sea_orm(
+        from_expr = "Expr::col((super::run::Entity, super::run::Column::FinishTime))
+            .sub(Expr::col((super::run::Entity, super::run::Column::TriggeredAt)))
+            .avg()"
+    )]
+    pub avg_latency: Option<f64>,
+}

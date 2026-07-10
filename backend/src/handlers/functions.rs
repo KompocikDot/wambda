@@ -2,23 +2,33 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::{
-    Json, Router, extract::State, http::StatusCode, middleware::from_extractor, routing::get,
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+    middleware::from_extractor,
+    routing::{get, post},
 };
 use axum_typed_multipart::TypedMultipart;
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter, QuerySelect};
 use uuid::Uuid;
 
 use crate::{
     errors::AppError,
     exctractors::AuthUser,
-    models::function::{self, Entity as Function},
-    schemas::functions::{CreateFunctionPayload, CreateFunctionResponse, ListFunctionsResponse},
+    models::{
+        function::{self, Entity as Function, MainPageFunctionQuery},
+        run,
+    },
+    schemas::functions::{
+        CreateFunctionPayload, CreateFunctionResponse, MainPageFunctionsResponse,
+    },
     state::AppState,
 };
 
 pub fn functions_router() -> Router<Arc<AppState>> {
     return Router::new()
-        .route("/", get(list_functions).post(create_function))
+        .route("/", get(list_functions))
+        .route("/", post(create_function))
         .layer(from_extractor::<AuthUser>());
 }
 
@@ -59,9 +69,12 @@ async fn create_function(
 async fn list_functions(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
-) -> Result<(StatusCode, Json<ListFunctionsResponse>), AppError> {
+) -> Result<(StatusCode, Json<MainPageFunctionsResponse>), AppError> {
     let functions = Function::find()
         .filter(function::COLUMN.owner_id.eq(user.id))
+        .left_join(run::Entity)
+        .group_by(function::Column::Id)
+        .into_partial_model::<MainPageFunctionQuery>()
         .all(&state.db)
         .await
         .context("could not retrieve functions")?;

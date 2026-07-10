@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use axum::body::Bytes;
 use axum_typed_multipart::{FieldData, TryFromField, TryFromMultipart};
 use serde::{Deserialize, Serialize};
@@ -7,7 +5,8 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::models::function::{
-    Language as ModelLanguage, Model as FunctionModel, TriggerType as ModelTrigger,
+    Language as ModelLanguage, MainPageFunctionQuery, Model as FunctionModel,
+    TriggerType as ModelTrigger,
 };
 
 #[derive(Deserialize, Serialize, TryFromField, Clone)]
@@ -78,6 +77,13 @@ pub struct CreateFunctionResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Env {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FunctionResponse {
     pub uuid: Uuid,
     pub name: String,
@@ -85,16 +91,23 @@ pub struct FunctionResponse {
     pub trigger: Trigger,
     pub memory_limit: i32,
     pub timeout: i32,
-    pub envs: HashMap<String, String>,
+    pub envs: Vec<Env>,
 }
 
-fn unstringify_envs(stringified_envs: String) -> HashMap<String, String> {
+fn unstringify_envs(stringified_envs: String) -> Vec<Env> {
     // dencrypt these values somehow - maybe with user's api key?
-    let mut envs: HashMap<String, String> = HashMap::new();
+    //
+    let mut envs: Vec<Env> = Vec::new();
+    if stringified_envs.len() == 0 {
+        return envs;
+    }
 
     for key_val in stringified_envs.split(",") {
         let items: Vec<&str> = key_val.split(":").collect();
-        envs.insert(items[0].to_owned(), items[1].to_owned());
+        envs.push(Env {
+            key: items[0].to_owned(),
+            value: items[1].to_owned(),
+        });
     }
 
     return envs;
@@ -116,14 +129,36 @@ impl From<FunctionModel> for FunctionResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ListFunctionsResponse {
-    pub functions: Vec<FunctionResponse>,
+pub struct MainPageFunction {
+    pub uuid: Uuid,
+    pub name: String,
+    pub language: Language,
+    pub status: String,
+    pub invocations: i64,
+    pub avg_latency: Option<f64>,
 }
 
-impl From<Vec<FunctionModel>> for ListFunctionsResponse {
-    fn from(models: Vec<FunctionModel>) -> Self {
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase", transparent)]
+pub struct MainPageFunctionsResponse {
+    #[serde(flatten)]
+    pub functions: Vec<MainPageFunction>,
+}
+
+impl From<Vec<MainPageFunctionQuery>> for MainPageFunctionsResponse {
+    fn from(models: Vec<MainPageFunctionQuery>) -> Self {
         Self {
-            functions: models.into_iter().map(Into::into).collect(),
+            functions: models
+                .into_iter()
+                .map(|m| MainPageFunction {
+                    uuid: m.uuid,
+                    name: m.name,
+                    language: m.language.clone().into(),
+                    status: m.status,
+                    invocations: m.invocations,
+                    avg_latency: m.avg_latency,
+                })
+                .collect(),
         }
     }
 }

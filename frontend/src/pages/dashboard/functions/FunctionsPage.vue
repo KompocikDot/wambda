@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import SidebarPanel from '@/components/dashboard/SidebarPanel.vue'
+import { $api } from '@/composables/useAPI'
 import type { TableColumn, TableRow } from '@nuxt/ui'
-import { computed, h, ref, resolveComponent } from 'vue'
+import { computed, h, onMounted, ref, resolveComponent } from 'vue'
 import { useRouter } from 'vue-router'
 
 const UBadge = resolveComponent('UBadge')
@@ -9,56 +10,18 @@ const UBadge = resolveComponent('UBadge')
 const router = useRouter()
 
 type Function = {
+  uuid: string
   name: string
   language: string
   status: string
   statusColor: string
-  avgLatencyMs: number
+  avgLatencyMs: number | null
   invocations: number
 }
 
-const functions: Function[] = [
-  {
-    name: 'image-resize',
-    language: 'rust',
-    status: 'active',
-    statusColor: 'success',
-    avgLatencyMs: 1.8,
-    invocations: 128_402,
-  },
-  {
-    name: 'pdf-generate',
-    language: 'rust',
-    status: 'active',
-    statusColor: 'success',
-    avgLatencyMs: 6.2,
-    invocations: 42_918,
-  },
-  {
-    name: 'webhook-relay',
-    language: 'assemblyScript',
-    status: 'active',
-    statusColor: 'success',
-    avgLatencyMs: 0.9,
-    invocations: 301_004,
-  },
-  {
-    name: 'auth-token-verify',
-    language: 'rust',
-    status: 'degraded',
-    statusColor: 'warning',
-    avgLatencyMs: 1400.1,
-    invocations: 88_730,
-  },
-  {
-    name: 'csv-transform',
-    language: 'c',
-    status: 'disabled',
-    statusColor: 'neutral',
-    avgLatencyMs: 3.4,
-    invocations: 0,
-  },
-]
+const loading = ref<boolean>(false)
+const functions = ref<Function[]>([])
+
 const columns: TableColumn<Function>[] = [
   {
     accessorKey: 'name',
@@ -93,10 +56,14 @@ const columns: TableColumn<Function>[] = [
     },
   },
   {
-    accessorKey: 'avgLatencyMs',
+    accessorKey: 'avgLatency',
     header: 'avg latency',
     cell: ({ row }) => {
-      const latency = row.getValue<number>('avgLatencyMs')
+      const latency = row.getValue<number | null>('avgLatency')
+      if (latency === null) {
+        return '-'
+      }
+
       if (latency > 1000) {
         return `${(latency / 1000).toFixed(1)}s`
       }
@@ -115,9 +82,9 @@ const globalTableFilter = ref('')
 
 const filteredFunctions = computed(() => {
   if (functionFilter.value === 'all') {
-    return functions
+    return functions.value
   }
-  return functions.filter((fn) => fn.status === functionFilter.value)
+  return functions.value.filter((fn) => fn.status === functionFilter.value)
 })
 
 const setFnFilter = (value: string) => {
@@ -125,8 +92,27 @@ const setFnFilter = (value: string) => {
 }
 
 const onRowClick = (_: Event, row: TableRow<Function>) => {
-  router.push({ name: 'singleFunction', params: { uuid: row.getValue<string>('name') } })
+  router.push({
+    name: 'singleFunction',
+    params: { uuid: row.original.uuid, name: row.getValue<string>('name') },
+  })
 }
+
+const loadFunctions = async () => {
+  loading.value = true
+
+  try {
+    functions.value = await $api('/functions', { credentials: 'include' })
+  } catch (e) {
+    console.error(e)
+  }
+
+  loading.value = false
+}
+
+onMounted(() => {
+  loadFunctions()
+})
 </script>
 
 <template>
@@ -135,7 +121,11 @@ const onRowClick = (_: Event, row: TableRow<Function>) => {
     <div class="flex flex-col w-full h-full">
       <UDashboardNavbar title="Functions" icon="i-lucide-square-function">
         <template #right>
-          <UButton to="/functions/new" icon="i-lucide-plus" label="New function" />
+          <UButton
+            :to="{ name: 'singleFunction', params: { uuid: 'new', name: 'new' } }"
+            icon="i-lucide-plus"
+            label="New function"
+          />
         </template>
       </UDashboardNavbar>
       <UDashboardPanel class="px-6 py-4 gap-y-4">
@@ -171,7 +161,7 @@ const onRowClick = (_: Event, row: TableRow<Function>) => {
           />
         </div>
         <UEmpty
-          v-if="functions.length === 0"
+          v-if="functions.length === 0 && !loading"
           icon="i-lucide-file"
           title="No functions found"
           description="It looks like you haven't added any functions. Create one to get started."
@@ -179,12 +169,14 @@ const onRowClick = (_: Event, row: TableRow<Function>) => {
             {
               icon: 'i-lucide-plus',
               label: 'Create new',
+              to: { name: 'singleFunction', params: { uuid: 'new', name: 'new' } },
             },
             {
               icon: 'i-lucide-refresh-cw',
               label: 'Refresh',
               color: 'neutral',
               variant: 'subtle',
+              onClick: loadFunctions,
             },
           ]"
         />
@@ -192,6 +184,7 @@ const onRowClick = (_: Event, row: TableRow<Function>) => {
           v-else
           v-model:global-filter="globalTableFilter"
           :data="filteredFunctions"
+          :loading="loading"
           :columns="columns"
           @select="onRowClick"
         />
