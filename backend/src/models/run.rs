@@ -5,8 +5,8 @@ use sea_orm::entity::prelude::*;
 pub enum Status {
     #[sea_orm(string_value = "success")]
     Success,
-    #[sea_orm(string_value = "error")]
-    Error,
+    #[sea_orm(string_value = "failure")]
+    Failure,
 }
 
 #[sea_orm::model]
@@ -22,7 +22,7 @@ pub struct Model {
     pub status: Status,
 
     pub function_id: i32,
-    #[sea_orm(belongs_to, from = "function_id", to = "id", on_delete="Cascade")]
+    #[sea_orm(belongs_to, from = "function_id", to = "id", on_delete = "Cascade")]
     pub function: HasOne<super::function::Entity>,
 }
 

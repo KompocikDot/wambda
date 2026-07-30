@@ -12,16 +12,20 @@ mod handlers;
 mod models;
 mod schemas;
 mod state;
+pub mod executor;
 
-use state::AppState;
 use tower_http::cors::CorsLayer;
 use tower_sessions_cookie_store::{CookieSessionConfig, CookieSessionManagerLayer, Key};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::handlers::auth::auth_router;
+use crate::handlers::executor::executor_router;
 use crate::handlers::function::functions_router;
+use crate::handlers::runs::runs_router;
+use crate::handlers::stats::stats_router;
 use crate::handlers::user::user_router;
+use crate::state::AppState;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -64,6 +68,9 @@ async fn main() -> Result<()> {
         .nest("/api/auth", auth_router())
         .nest("/api/user", user_router())
         .nest("/api/functions", functions_router())
+        .nest("/api/stats", stats_router())
+        .nest("/api/runs", runs_router())
+        .nest("/api/execute", executor_router())
         .with_state(state)
         .layer(CookieSessionManagerLayer::signed(secret).with_config(session_config))
         .layer(

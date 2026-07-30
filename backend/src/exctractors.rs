@@ -55,8 +55,7 @@ where
             .await
             .map_err(|_| AppError::Internal(anyhow::anyhow!("Session missing")))?;
 
-        let user_id: Option<i32> = session.get("user_id").await.unwrap_or(None);
-
+        let user_id = session.get("user_id").await.unwrap_or(None);
         match user_id {
             Some(id) => Ok(AuthUser { id }),
             None => Err(AppError::Unauthorized),

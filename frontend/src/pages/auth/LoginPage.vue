@@ -36,6 +36,7 @@ const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
         email: event.data.email,
         password: event.data.password,
       },
+      credentials: 'include'
     })
 
     userStorage.value = user as LoginUserResponse

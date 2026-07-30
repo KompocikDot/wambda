@@ -10,7 +10,7 @@ import {
   type EnvVarOutput,
 } from '@/schemas/function'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { onMounted, reactive, ref, useTemplateRef } from 'vue'
+import { onMounted, reactive, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
 
 const languages = [

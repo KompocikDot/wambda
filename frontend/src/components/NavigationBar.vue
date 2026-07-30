@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import FaasmLogo from './FaasmLogo.vue'
-
-const router = useRouter()
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -36,6 +33,10 @@ const items = ref<NavigationMenuItem[]>([
         <UButton :to="{ name: 'register' }">Get started</UButton>
         <UColorModeButton />
       </div>
+    </template>
+
+    <template #body>
+    <UNavigationMenu orientation="vertical" :items="items" />
     </template>
   </UHeader>
 </template>

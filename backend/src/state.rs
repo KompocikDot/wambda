@@ -7,6 +7,7 @@ use std::{env, sync::Arc};
 pub struct AppState {
     pub db: DatabaseConnection,
     pub blob_bucket: Arc<Bucket>,
+    pub io_executions_bucket: Arc<Bucket>,
     pub debug_mode: bool,
 }
 
@@ -27,28 +28,47 @@ impl AppState {
             endpoint: "http://localhost:8333".to_string(),
         };
         let credentials = Credentials::new(
-            Some(""), // access-key; change later
-            Some(""), // secret-key; change later
-            None,     // set security_token
-            None,     // session token NOTE: Should it be set?
+            Some(""), // FIXME: access-key; change later
+            Some(""), // FIXME: secret-key; change later
+            None,     // FIXME: set security_token
+            None,     // FIXME: session token NOTE: Should it be set?
             None,
         )?;
 
         let blob_bucket =
             Bucket::new("binaries", region.clone(), credentials.clone())?.with_path_style();
 
-        if let Err(e) = Bucket::create_with_path_style(
-            "binaries",
-            region.clone(),
-            credentials.clone(),
-            BucketConfiguration::default(),
-        )
-        .await
-        {
-            let err_msg = e.to_string();
-            if !(err_msg.contains("BucketAlreadyOwnedByYou") || err_msg.contains("409")) {
-                return Err(e).context("failed to handle binaries bucket creation");
-            }
+        let blob_bucket_exists = blob_bucket
+            .exists()
+            .await
+            .context("could not check existence of a blobs bucket")?;
+
+        if !blob_bucket_exists {
+            Bucket::create_with_path_style(
+                "binaries",
+                region.clone(),
+                credentials.clone(),
+                BucketConfiguration::default(),
+            )
+            .await?;
+        }
+
+        let executions_io_bucket =
+            Bucket::new("executions_io", region.clone(), credentials.clone())?.with_path_style();
+
+        let executions_io_bucket_exists = executions_io_bucket
+            .exists()
+            .await
+            .context("could not check existence of a executions bucket")?;
+
+        if !executions_io_bucket_exists {
+            Bucket::create_with_path_style(
+                "executions_io",
+                region.clone(),
+                credentials.clone(),
+                BucketConfiguration::default(),
+            )
+            .await?;
         }
 
         let debug_mode = env::var_os("DEBUG").unwrap_or_default() == "1";
@@ -56,6 +76,7 @@ impl AppState {
         return Ok(Self {
             db: pool,
             blob_bucket: Arc::from(blob_bucket),
+            io_executions_bucket: Arc::from(executions_io_bucket),
             debug_mode,
         });
     }
