@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
-import { computed } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useColorMode } from '@vueuse/core'
 import WambdaLogo from '../WambdaLogo.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useLocalStorage } from '@/composables/useLocalStorage'
-import type { User } from '@/schemas.ts/auth'
+import type { User } from '@/schemas/auth'
+import { $api } from '@/composables/useAPI'
 
 const route = useRoute()
 const router = useRouter()
 const colorMode = useColorMode()
 const userStorage = useLocalStorage<User | null>('user', null, true)
 const { setAuth } = useAuth()
+const abortController = new AbortController();
 
-const logout = () => {
+const logout = async () => {
+  await $api("/api/logout", {credentials: 'include', signal: abortController.signal});
   userStorage.value = null
   setAuth(false)
   router.push({ name: 'main' })
@@ -95,6 +98,10 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
     },
   ],
 ])
+
+onUnmounted(() => {
+  abortController.abort()
+})
 </script>
 
 <template>

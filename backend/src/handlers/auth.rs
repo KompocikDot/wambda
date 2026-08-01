@@ -30,6 +30,7 @@ pub fn auth_router() -> Router<Arc<AppState>> {
     return Router::new()
         .route("/register", post(register_user))
         .route("/login", post(login_user))
+        .route("/logout", post(logout))
         .route("/change-password", patch(change_password));
 }
 
@@ -103,6 +104,15 @@ async fn login_user(
             full_name: user.full_name,
         }),
     ));
+}
+
+async fn logout(_: AuthUser, session: Session) -> Result<StatusCode, AppError> {
+    session
+        .delete()
+        .await
+        .context("could not remove session on logout")?;
+
+    return Ok(StatusCode::OK);
 }
 
 async fn change_password(
