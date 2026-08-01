@@ -3,7 +3,6 @@ use axum::body::{Body as AxumBody, Bytes};
 use axum::extract::Request;
 use axum::response::Response;
 use http_body_util::BodyExt;
-use tokio::fs::File;
 use wasmtime::component::{Accessor, Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
@@ -38,17 +37,26 @@ impl WasiView for WASMState {
     }
 }
 
+// Calls the guest's `handle` export and turns the wasi `Response` resource
+// into a plain, fully-buffered `http::Response`.
+//
+// Returns `Ok(Err(code))` for a wasi-level error-code (e.g. guest rejected the
+// request); returns `Err(_)` only for host-side failures (traps, wasmtime errors).
 async fn handle_and_collect(
     accessor: &Accessor<WASMState>,
     service: &Service,
     req: WasiRequest,
 ) -> Result<Result<http::Response<Bytes>, ErrorCode>> {
+    // Invoke the guest's exported `handle` function with our request resource.
     let res = match service.handle(accessor, req).await? {
         Ok(res) => res,
-        Err(code) => return Ok(Err(code)),
+        Err(code) => return Ok(Err(code)), // guest returned an http error-code, not a trap
     };
+    // Convert the wasi `Response` resource into an `http::Response` with a
+    // streaming body; `store` is borrowed briefly via `accessor.with`.
     let res = accessor.with(|store| res.into_http(store, async { Ok(()) }))?;
     let (parts, body) = res.into_parts();
+    // Drain the streaming body into memory so we can hand back a plain response.
     let bytes = body
         .collect()
         .await
@@ -57,16 +65,24 @@ async fn handle_and_collect(
     Ok(Ok(http::Response::from_parts(parts, bytes)))
 }
 
+/// Loads a wasm component from `binary`, instantiates it against the
+/// `wasi:http/service` world, forwards `axum_req` to its `handle` export, and
+/// converts the guest's response back into an axum `Response`.
 pub async fn execute_wasm(axum_req: Request, binary: &[u8]) -> Result<Response> {
+    // Component-model async (needed for wasi:http/wasi:cli p3, which use
+    // `async func`/streams/futures instead of poll-based p2 APIs).
     let mut config = Config::new();
     config.wasm_component_model_async(true);
 
     let engine = Engine::new(&config)?;
 
+    // Wire up the host-side implementations of wasi:http and wasi:cli (p3)
+    // so the guest can import them.
     let mut linker = Linker::<WASMState>::new(&engine);
     wasmtime_wasi_http::p3::add_to_linker(&mut linker)?;
     wasmtime_wasi::p3::add_to_linker(&mut linker)?;
 
+    // Fresh per-request host state (resource table + wasi contexts).
     let state = WASMState {
         cli_ctx: WasiCtx::builder().build(),
         http_ctx: WasiHttpCtx::default(),
@@ -83,11 +99,17 @@ pub async fn execute_wasm(axum_req: Request, binary: &[u8]) -> Result<Response> 
         .await.unwrap();
         // .context("failed to instantiate wasi:http/service world")?;
 
+    // Convert the incoming axum request into a wasi `Request` value.
     // `axum::Error` doesn't know how to become a wasi `error-code`, so map it first.
     let (parts, body) = axum_req.into_parts();
     let body = body.map_err(|err| ErrorCode::InternalError(Some(err.to_string())));
+    // `io` is a future that drives streaming the request body into the guest;
+    // it must be polled concurrently alongside the `handle` call below.
     let (req, io) = WasiRequest::from_http(http::Request::from_parts(parts, body));
 
+    // `run_concurrent` gives us an `Accessor` for calling async component
+    // exports. We race the `handle` call against the body-streaming future so
+    // both make progress together.
     let res = store
         .run_concurrent(async |accessor| {
             let (res, ()) = tokio::try_join!(
@@ -96,8 +118,10 @@ pub async fn execute_wasm(axum_req: Request, binary: &[u8]) -> Result<Response> 
             )?;
             anyhow::Ok(res)
         })
-        .await??;
+        .await??; // first `?` = wasmtime::Result, second `?` = our anyhow::Result
 
+    // Turn the collected wasi response into a real axum response, or bail if
+    // the guest reported an http-level error.
     match res {
         Ok(response) => {
             let (parts, body) = response.into_parts();
