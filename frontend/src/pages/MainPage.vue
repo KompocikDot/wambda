@@ -21,7 +21,7 @@ const links: ButtonProps[] = [
       <UPageHero
         orientation="horizontal"
         title="Run WebAssembly functions in milliseconds."
-        description="FAASM is a serverless platform for WASM functions: sub-millisecond cold starts, sandboxed and safe by design. Upload a .wasm module and go live in seconds."
+        description="Wambda is a serverless platform for WASM functions: sub-millisecond cold starts, sandboxed and safe by design. Upload a .wasm module and go live in seconds."
         :links="links"
       >
         <template #headline>

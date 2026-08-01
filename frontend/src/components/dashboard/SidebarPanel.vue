@@ -3,7 +3,7 @@ import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useColorMode } from '@vueuse/core'
-import FaasmLogo from '../FaasmLogo.vue'
+import WambdaLogo from '../WambdaLogo.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import type { User } from '@/schemas.ts/auth'
@@ -104,8 +104,8 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
     :ui="{ footer: 'border-t border-default', root: 'bg-muted' }"
   >
     <template #header="{ collapsed }">
-      <FaasmLogo class="pl-1.5 h-5 w-auto shrink-0" />
-      <div v-if="!collapsed" class="font-bold">FAASM</div>
+      <WambdaLogo class="pl-1.5 h-5 w-auto shrink-0" />
+      <div v-if="!collapsed" class="font-bold">Wambda</div>
     </template>
 
     <template #default="{ collapsed }">

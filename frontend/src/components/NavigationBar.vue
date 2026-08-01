@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { ref } from 'vue'
-import FaasmLogo from './FaasmLogo.vue'
+import WambdaLogo from './WambdaLogo.vue'
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -20,8 +20,8 @@ const items = ref<NavigationMenuItem[]>([
   <UHeader>
     <template #title>
       <div class="flex gap-x-1 items-center">
-        <FaasmLogo />
-        <div>FAASM</div>
+        <WambdaLogo />
+        <div>Wambda </div>
       </div>
     </template>
 
@@ -36,7 +36,7 @@ const items = ref<NavigationMenuItem[]>([
     </template>
 
     <template #body>
-    <UNavigationMenu orientation="vertical" :items="items" />
+      <UNavigationMenu orientation="vertical" :items="items" />
     </template>
   </UHeader>
 </template>

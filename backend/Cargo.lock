@@ -1397,36 +1397,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "faasm"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "argon2",
- "axum",
- "axum_typed_multipart",
- "base64",
- "chrono",
- "dotenv",
- "http",
- "http-body-util",
- "rust-s3",
- "sea-orm",
- "serde",
- "serde_json",
- "tokio",
- "tower-http 0.7.0",
- "tower-sessions",
- "tower-sessions-cookie-store",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "validator",
- "wasmtime",
- "wasmtime-wasi",
- "wasmtime-wasi-http",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4648,6 +4618,36 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "wambda"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "argon2",
+ "axum",
+ "axum_typed_multipart",
+ "base64",
+ "chrono",
+ "dotenv",
+ "http",
+ "http-body-util",
+ "rust-s3",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower-http 0.7.0",
+ "tower-sessions",
+ "tower-sessions-cookie-store",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "validator",
+ "wasmtime",
+ "wasmtime-wasi",
+ "wasmtime-wasi-http",
+]
 
 [[package]]
 name = "want"

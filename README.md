@@ -1,4 +1,4 @@
-# FAASM: WASM-based FaaS runner
+# Wambda: WASM-based FaaS runner
 
 ## Tools
 

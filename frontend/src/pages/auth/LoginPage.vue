@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FaasmLogo from '@/components/FaasmLogo.vue'
+import WambdaLogo from '@/components/WambdaLogo.vue'
 import { $api } from '@/composables/useAPI'
 import {
   loginFormSchema,
@@ -55,8 +55,8 @@ const onSubmit = async (event: FormSubmitEvent<LoginFormState>) => {
 
 <template>
   <UMain class="flex flex-col items-center justify-center gap-2 p-4">
-    <FaasmLogo />
-    <h1 class="text-2xl font-bold">Sign in to FAASM</h1>
+    <WambdaLogo />
+    <h1 class="text-2xl font-bold">Sign in to Wambda</h1>
     <h2 class="text-sm text-muted">Deploy and run you WASM functions.</h2>
     <UCard variant="outline">
       <UAlert

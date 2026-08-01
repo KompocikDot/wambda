@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FaasmLogo from '@/components/FaasmLogo.vue'
+import WambdaLogo from '@/components/WambdaLogo.vue'
 import { useAuth } from '@/composables/useAuth'
 import { $api } from '@/composables/useAPI'
 import {
@@ -48,7 +48,7 @@ const onSubmit = async (event: FormSubmitEvent<RegisterFormState>) => {
 
 <template>
   <UMain class="flex flex-col items-center justify-center gap-2 p-4">
-    <FaasmLogo />
+    <WambdaLogo />
     <h1 class="text-2xl font-bold">Create your account</h1>
     <h2 class="text-sm text-muted">Start deploying WASM functions now</h2>
     <UCard variant="outline">
