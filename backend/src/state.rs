@@ -25,13 +25,13 @@ impl AppState {
 
         let region = Region::Custom {
             region: "local".to_string(),
-            endpoint: "http://localhost:8333".to_string(),
+            endpoint: "http://localhost:9000".to_string(),
         };
         let credentials = Credentials::new(
-            Some(""), // FIXME: access-key; change later
-            Some(""), // FIXME: secret-key; change later
-            None,     // FIXME: set security_token
-            None,     // FIXME: session token NOTE: Should it be set?
+            Some(&env::var("RUSTFS_ACCESS_KEY").unwrap_or_default()), // FIXME: access-key; change later
+            Some(&env::var("RUSTFS_SECRET_KEY").unwrap_or_default()), // FIXME: secret-key; change later
+            None,                                                     // FIXME: set security_token
+            None, // FIXME: session token NOTE: Should it be set?
             None,
         )?;
 
@@ -50,11 +50,12 @@ impl AppState {
                 credentials.clone(),
                 BucketConfiguration::default(),
             )
-            .await?;
+            .await
+            .context("could not create binaries bucket")?;
         }
 
         let executions_io_bucket =
-            Bucket::new("executions_io", region.clone(), credentials.clone())?.with_path_style();
+            Bucket::new("executions-io", region.clone(), credentials.clone())?.with_path_style();
 
         let executions_io_bucket_exists = executions_io_bucket
             .exists()
@@ -63,12 +64,13 @@ impl AppState {
 
         if !executions_io_bucket_exists {
             Bucket::create_with_path_style(
-                "executions_io",
+                "executions-io",
                 region.clone(),
                 credentials.clone(),
                 BucketConfiguration::default(),
             )
-            .await?;
+            .await
+            .context("could not create executions_io bucket")?;
         }
 
         let debug_mode = env::var_os("DEBUG").unwrap_or_default() == "1";
