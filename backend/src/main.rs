@@ -50,6 +50,7 @@ async fn main() -> Result<()> {
             .context("Could not create pool connection to the postgres database")?,
     );
 
+    println!("migrating db");
     state
         .db
         .get_schema_registry(module_path!().split("::").next().unwrap())
@@ -87,6 +88,8 @@ async fn main() -> Result<()> {
         .await
         .context("could not bind tcp listener")?;
 
+    println!("starting server...");
+    
     axum::serve(listener, app)
         .await
         .context("could not start http server")?;

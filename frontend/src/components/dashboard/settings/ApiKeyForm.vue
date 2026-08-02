@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { $api } from '@/composables/useAPI'
+import { useClipboard } from '@vueuse/core'
 import { onMounted, onUnmounted, reactive, ref } from 'vue'
 
 const abortController = new AbortController()
+const { copy } = useClipboard()
 
 const loading = ref(false)
 const show = ref(false)
@@ -10,6 +12,7 @@ const show = ref(false)
 const state = reactive({
   apiKey: '',
 })
+
 
 const apiKeyLoader = async (method: 'GET' | 'PATCH') => {
   loading.value = true
@@ -41,6 +44,7 @@ const showKey = () => {
   show.value = !show.value
 }
 
+
 onMounted(() => {
   getApiKey()
 })
@@ -64,16 +68,25 @@ onUnmounted(() => {
           disabled
         >
           <template #trailing>
-            <UButton
-              color="neutral"
-              variant="link"
-              size="sm"
-              :icon="show ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-              :aria-label="show ? 'Hide password' : 'Show password'"
-              :aria-pressed="show"
-              aria-controls="password"
-              @click="showKey"
-            />
+            <div class="flex flex-row gap-x-0.5">
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                icon="i-lucide-copy"
+                @click="copy(state.apiKey)"
+              />
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                :icon="show ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="show ? 'Hide password' : 'Show password'"
+                :aria-pressed="show"
+                aria-controls="password"
+                @click="showKey"
+              />
+            </div>
           </template>
         </UInput>
       </UFormField>

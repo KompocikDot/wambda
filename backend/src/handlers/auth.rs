@@ -14,7 +14,7 @@ use axum::{
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{Set, Unchanged},
-    EntityTrait, QueryFilter, QuerySelect,
+    ColumnTrait, EntityTrait, QueryFilter, QuerySelect,
 };
 use serde_json::json;
 use tower_sessions_cookie_store::Session;
@@ -193,7 +193,9 @@ async fn regenerate_api_key(
         ..Default::default()
     };
 
-    ApiKey::update(model)
+    ApiKey::update_many()
+        .set(model)
+        .filter(api_key::Column::OwnerId.eq(user.id))
         .exec(&state.db)
         .await
         .context("could not update user api key")?;
