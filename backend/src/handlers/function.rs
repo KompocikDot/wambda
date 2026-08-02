@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -11,6 +11,7 @@ use axum::{
 use axum_typed_multipart::TypedMultipart;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter, QuerySelect};
 use uuid::Uuid;
+use wasmtime::{Config, Engine};
 
 use crate::{
     errors::AppError,
@@ -32,6 +33,18 @@ pub fn functions_router() -> Router<Arc<AppState>> {
         .route("/", post(create_function))
         .route("/{function_id}", get(get_function))
         .layer(from_extractor::<AuthUser>());
+}
+
+async fn precopmile_wasm(bytes: &[u8]) -> Result<Vec<u8>, AppError> {
+    let config = Config::new();
+    let engine = Engine::new(&config).map_err(|e| {
+        AppError::Internal(anyhow!("could not create engine to precompile wasm: {e}"))
+    })?;
+    let compiled_module = engine
+        .precompile_module(bytes)
+        .map_err(|e| AppError::Internal(anyhow!("could not precompile wasm: {e}")))?;
+
+    Ok(compiled_module)
 }
 
 async fn create_function(
@@ -58,9 +71,11 @@ async fn create_function(
         .await
         .context("could not insert function in the db")?;
 
+    let wasm = precopmile_wasm(&payload.wasm.contents).await?;
+
     state
         .blob_bucket
-        .put_object(uuid.to_string(), &payload.wasm.contents)
+        .put_object(uuid.to_string(), wasm.as_slice())
         .await
         .context("could not write wasm to bucket")?;
 

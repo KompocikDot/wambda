@@ -89,7 +89,7 @@ pub async fn execute_wasm(
     let mut linker = Linker::<WASMState>::new(&engine);
     wasmtime_wasi_http::p3::add_to_linker(&mut linker)?;
     wasmtime_wasi::p3::add_to_linker(&mut linker)?;
-    
+
     let stdout = File::options()
         .append(true)
         .open(stdout_filepath)
@@ -99,7 +99,7 @@ pub async fn execute_wasm(
         .append(true)
         .open(stderr_filepath)
         .context("could not create wasi stderr")?;
-    
+
     // Fresh per-request host state (resource table + wasi contexts).
     let state = WASMState {
         cli_ctx: WasiCtx::builder()
@@ -111,7 +111,9 @@ pub async fn execute_wasm(
     };
 
     let mut store = Store::new(&engine, state);
-    let component = Component::from_binary(&engine, binary).unwrap(); //.context("supplied binary is not a valid wasm component")?;
+    
+    // WARNING: Be careful, this code have to be deserialzed on a same version as it was compiled.
+    let component = unsafe { Component::deserialize(&engine, binary).unwrap() };
 
     // The guest must export `wasi:http/handler@0.3.0` (part of the
     // `wasi:http/service` world): `handle: async func(request) -> result<response, error-code>`.
