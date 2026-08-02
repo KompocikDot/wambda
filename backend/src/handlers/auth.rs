@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, anyhow};
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     password_hash::{SaltString, rand_core::OsRng},
@@ -9,19 +9,27 @@ use axum::{
     Json, Router,
     extract::State,
     http::StatusCode,
-    routing::{patch, post},
+    routing::{get, patch, post},
 };
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait};
+use sea_orm::{
+    ActiveModelTrait,
+    ActiveValue::{Set, Unchanged},
+    EntityTrait, QueryFilter, QuerySelect,
+};
 use serde_json::json;
 use tower_sessions_cookie_store::Session;
+use uuid::Uuid;
 
 use crate::{
     errors::AppError,
     exctractors::{AuthUser, ValidatedJson},
-    models::user::{self, Entity as User},
+    models::{
+        api_key::{self, ActiveModel as ApiKeyModel, Entity as ApiKey},
+        user::{self, Entity as User},
+    },
     schemas::auth::{
-        ChangePasswordPayload, LoginUserPayload, LoginUserResponse, RegisterUserPayload,
-        RegisterUserResponse,
+        ChangeApiKeyResponse, ChangePasswordPayload, GetApiKeyResponse, LoginUserPayload,
+        LoginUserResponse, RegisterUserPayload, RegisterUserResponse,
     },
     state::AppState,
 };
@@ -31,7 +39,8 @@ pub fn auth_router() -> Router<Arc<AppState>> {
         .route("/register", post(register_user))
         .route("/login", post(login_user))
         .route("/logout", post(logout))
-        .route("/change-password", patch(change_password));
+        .route("/change-password", patch(change_password))
+        .route("/api-key", get(get_api_key).patch(regenerate_api_key));
 }
 
 async fn register_user(
@@ -57,6 +66,17 @@ async fn register_user(
         .insert(&state.db)
         .await
         .context("could not insert user into the db")?;
+
+    let new_api_key = ApiKeyModel {
+        key: Set(Uuid::now_v7()),
+        owner_id: Set(user.id),
+        ..Default::default()
+    };
+
+    new_api_key
+        .insert(&state.db)
+        .await
+        .context("could not insert api key into the db")?;
 
     return Ok((
         StatusCode::CREATED,
@@ -160,4 +180,45 @@ async fn change_password(
         .context("could not set new user password")?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn regenerate_api_key(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+) -> Result<Json<ChangeApiKeyResponse>, AppError> {
+    let uuid = Uuid::now_v7();
+    let model = ApiKeyModel {
+        key: Set(uuid),
+        owner_id: Unchanged(user.id),
+        ..Default::default()
+    };
+
+    ApiKey::update(model)
+        .exec(&state.db)
+        .await
+        .context("could not update user api key")?;
+
+    Ok(Json(ChangeApiKeyResponse { api_key: uuid }))
+}
+
+async fn get_api_key(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+) -> Result<Json<GetApiKeyResponse>, AppError> {
+    let db_api_key = api_key::Entity::find()
+        .filter(api_key::Entity::COLUMN.owner_id.eq(user.id))
+        .select_only()
+        .column(api_key::Column::Key)
+        .into_tuple()
+        .one(&state.db)
+        .await
+        .context("could not fetch api key due to db error")?;
+
+    match db_api_key {
+        Some(api_key) => Ok(Json(GetApiKeyResponse { api_key })),
+        None => Err(AppError::Internal(anyhow!(
+            "could not fetch user={} api key",
+            user.id
+        ))),
+    }
 }

@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 use axum::{
     Json,
     extract::{FromRequest, FromRequestParts, Request},
@@ -59,6 +61,24 @@ where
         match user_id {
             Some(id) => Ok(AuthUser { id }),
             None => Err(AppError::Unauthorized),
+        }
+    }
+}
+
+pub struct ExtractApiKey(pub String);
+
+impl<S> FromRequestParts<S> for ExtractApiKey
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
+        let header = parts.headers.get("x-api-key").context("context")?;
+
+        match header.to_str() {
+            Ok(api_key) => Ok(ExtractApiKey(api_key.to_string())),
+            Err(_) => Err(AppError::Unauthorized),
         }
     }
 }

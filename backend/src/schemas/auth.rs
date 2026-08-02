@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use validator::{Validate, ValidationError};
 
 fn validate_password(password: &str) -> Result<(), ValidationError> {
@@ -72,4 +73,16 @@ pub struct ChangePasswordPayload {
     pub current_password: String,
     #[validate(length(min = 8, max = 64), custom(function = "validate_password"))]
     pub new_password: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangeApiKeyResponse {
+    pub api_key: Uuid,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetApiKeyResponse {
+    pub api_key: Uuid,
 }

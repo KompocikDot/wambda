@@ -3,6 +3,7 @@ import SidebarPanel from '@/components/dashboard/SidebarPanel.vue'
 import DeleteAccountForm from '@/components/dashboard/settings/DeleteAccountForm.vue'
 import ChangePasswordForm from '@/components/dashboard/settings/ChangePasswordForm.vue'
 import UpdateAccountDetailsForm from '@/components/dashboard/settings/UpdateAccountDetailsForm.vue'
+import ApiKeyForm from '@/components/dashboard/settings/ApiKeyForm.vue';
 </script>
 
 <template>
@@ -12,7 +13,10 @@ import UpdateAccountDetailsForm from '@/components/dashboard/settings/UpdateAcco
       <UDashboardNavbar title="Settings" icon="i-lucide-settings" />
       <UDashboardPanel class="px-6 py-4">
         <div class="flex flex-col gap-y-4">
-          <UpdateAccountDetailsForm />
+          <div class="flex gap-x-4">
+            <UpdateAccountDetailsForm />
+            <ApiKeyForm/>
+          </div>
           <ChangePasswordForm />
           <DeleteAccountForm />
         </div>

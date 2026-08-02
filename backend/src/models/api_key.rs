@@ -8,7 +8,7 @@ pub struct Model {
     pub id: i32,
 
     #[sea_orm(unique)]
-    pub key: String,
+    pub key: Uuid,
 
     pub owner_id: i32,
     #[sea_orm(belongs_to, from = "owner_id", to = "id")]
