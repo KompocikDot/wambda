@@ -31,15 +31,11 @@ pub fn functions_router() -> Router<Arc<AppState>> {
     return Router::new()
         .route("/", get(list_functions))
         .route("/", post(create_function))
-        .route("/{function_id}", get(get_function))
+        .route("/{function_id}", get(get_function).delete(delete_function))
         .layer(from_extractor::<AuthUser>());
 }
 
-async fn precopmile_wasm(bytes: &[u8]) -> Result<Vec<u8>, AppError> {
-    let config = Config::new();
-    let engine = Engine::new(&config).map_err(|e| {
-        AppError::Internal(anyhow!("could not create engine to precompile wasm: {e}"))
-    })?;
+async fn precopmile_wasm(engine: Arc<Engine>, bytes: &[u8]) -> Result<Vec<u8>, AppError> {
     let compiled_module = engine
         .precompile_module(bytes)
         .map_err(|e| AppError::Internal(anyhow!("could not precompile wasm: {e}")))?;
@@ -71,7 +67,7 @@ async fn create_function(
         .await
         .context("could not insert function in the db")?;
 
-    let wasm = precopmile_wasm(&payload.wasm.contents).await?;
+    let wasm = precopmile_wasm(state.wasmtime_engine.clone(), &payload.wasm.contents).await?;
 
     state
         .blob_bucket

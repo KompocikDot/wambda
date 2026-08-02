@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use s3::{Bucket, BucketConfiguration, Region, creds::Credentials};
 use sea_orm::{Database, DatabaseConnection};
 use std::{env, sync::Arc};
+use wasmtime::{Config, Engine};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -9,6 +10,7 @@ pub struct AppState {
     pub blob_bucket: Arc<Bucket>,
     pub io_executions_bucket: Arc<Bucket>,
     pub debug_mode: bool,
+    pub wasmtime_engine: Arc<Engine>,
 }
 
 impl AppState {
@@ -75,11 +77,16 @@ impl AppState {
 
         let debug_mode = env::var_os("DEBUG").unwrap_or_default() == "1";
 
+        let mut wasmtime_config = Config::new();
+        wasmtime_config.wasm_component_model_async(true);
+        let engine = Engine::new(&wasmtime_config)?;
+
         return Ok(Self {
             db: pool,
             blob_bucket: Arc::from(blob_bucket),
             io_executions_bucket: Arc::from(executions_io_bucket),
             debug_mode,
+            wasmtime_engine: Arc::from(engine),
         });
     }
 }

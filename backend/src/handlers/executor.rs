@@ -71,7 +71,14 @@ async fn execute(
         .await
         .context("could not read wasm binary from bucket")?;
 
-    let resp = execute_wasm(req, &stdout_filepath, &stderr_filepath, binary.as_slice()).await?;
+    let resp = execute_wasm(
+        state.wasmtime_engine.clone(),
+        req,
+        &stdout_filepath,
+        &stderr_filepath,
+        binary.as_slice(),
+    )
+    .await?;
 
     state
         .io_executions_bucket

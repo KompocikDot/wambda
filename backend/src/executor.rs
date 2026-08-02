@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::body::{Body as AxumBody, Bytes};
@@ -72,6 +73,7 @@ async fn handle_and_collect(
 /// `wasi:http/service` world, forwards `axum_req` to its `handle` export, and
 /// converts the guest's response back into an axum `Response`.
 pub async fn execute_wasm(
+    engine: Arc<Engine>,
     axum_req: Request,
     stdout_filepath: &String,
     stderr_filepath: &String,
@@ -79,10 +81,6 @@ pub async fn execute_wasm(
 ) -> Result<Response> {
     // Component-model async (needed for wasi:http/wasi:cli p3, which use
     // `async func`/streams/futures instead of poll-based p2 APIs).
-    let mut config = Config::new();
-    config.wasm_component_model_async(true);
-
-    let engine = Engine::new(&config)?;
 
     // Wire up the host-side implementations of wasi:http and wasi:cli (p3)
     // so the guest can import them.
