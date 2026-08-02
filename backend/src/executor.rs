@@ -1,3 +1,5 @@
+use std::fs::File;
+
 use anyhow::{Context, Result};
 use axum::body::{Body as AxumBody, Bytes};
 use axum::extract::Request;
@@ -5,6 +7,7 @@ use axum::response::Response;
 use http_body_util::BodyExt;
 use wasmtime::component::{Accessor, Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
+use wasmtime_wasi::cli::OutputFile;
 use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
 use wasmtime_wasi_http::p3::bindings::Service;
 use wasmtime_wasi_http::p3::bindings::http::types::ErrorCode;
@@ -68,7 +71,12 @@ async fn handle_and_collect(
 /// Loads a wasm component from `binary`, instantiates it against the
 /// `wasi:http/service` world, forwards `axum_req` to its `handle` export, and
 /// converts the guest's response back into an axum `Response`.
-pub async fn execute_wasm(axum_req: Request, binary: &[u8]) -> Result<Response> {
+pub async fn execute_wasm(
+    axum_req: Request,
+    stdout_filepath: &String,
+    stderr_filepath: &String,
+    binary: &[u8],
+) -> Result<Response> {
     // Component-model async (needed for wasi:http/wasi:cli p3, which use
     // `async func`/streams/futures instead of poll-based p2 APIs).
     let mut config = Config::new();
@@ -81,23 +89,36 @@ pub async fn execute_wasm(axum_req: Request, binary: &[u8]) -> Result<Response> 
     let mut linker = Linker::<WASMState>::new(&engine);
     wasmtime_wasi_http::p3::add_to_linker(&mut linker)?;
     wasmtime_wasi::p3::add_to_linker(&mut linker)?;
+    
+    let stdout = File::options()
+        .append(true)
+        .open(stdout_filepath)
+        .context("could not create wasi stdout")?;
 
+    let stderr = File::options()
+        .append(true)
+        .open(stderr_filepath)
+        .context("could not create wasi stderr")?;
+    
     // Fresh per-request host state (resource table + wasi contexts).
     let state = WASMState {
-        cli_ctx: WasiCtx::builder().build(),
+        cli_ctx: WasiCtx::builder()
+            .stdout(OutputFile::new(stdout))
+            .stderr(OutputFile::new(stderr))
+            .build(),
         http_ctx: WasiHttpCtx::default(),
         table: ResourceTable::default(),
     };
 
     let mut store = Store::new(&engine, state);
-    let component =
-        Component::from_binary(&engine, binary).unwrap(); //.context("supplied binary is not a valid wasm component")?;
+    let component = Component::from_binary(&engine, binary).unwrap(); //.context("supplied binary is not a valid wasm component")?;
 
     // The guest must export `wasi:http/handler@0.3.0` (part of the
     // `wasi:http/service` world): `handle: async func(request) -> result<response, error-code>`.
     let service = Service::instantiate_async(&mut store, &component, &linker)
-        .await.unwrap();
-        // .context("failed to instantiate wasi:http/service world")?;
+        .await
+        .unwrap();
+    // .context("failed to instantiate wasi:http/service world")?;
 
     // Convert the incoming axum request into a wasi `Request` value.
     // `axum::Error` doesn't know how to become a wasi `error-code`, so map it first.
@@ -112,10 +133,9 @@ pub async fn execute_wasm(axum_req: Request, binary: &[u8]) -> Result<Response> 
     // both make progress together.
     let res = store
         .run_concurrent(async |accessor| {
-            let (res, ()) = tokio::try_join!(
-                handle_and_collect(accessor, &service, req),
-                async { io.await.context("failed to stream request body into guest") }
-            )?;
+            let (res, ()) = tokio::try_join!(handle_and_collect(accessor, &service, req), async {
+                io.await.context("failed to stream request body into guest")
+            })?;
             anyhow::Ok(res)
         })
         .await??; // first `?` = wasmtime::Result, second `?` = our anyhow::Result
