@@ -9,9 +9,10 @@ use axum::{
     routing::{get, post},
 };
 use axum_typed_multipart::TypedMultipart;
+use s3::serde_types::ObjectIdentifier;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, QueryFilter, QuerySelect};
 use uuid::Uuid;
-use wasmtime::{Config, Engine};
+use wasmtime::Engine;
 
 use crate::{
     errors::AppError,
@@ -109,4 +110,62 @@ async fn list_functions(
         .context("could not retrieve functions")?;
 
     Ok((StatusCode::OK, Json(functions.into())))
+}
+
+async fn delete_function(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+    Path(function_id): Path<Uuid>,
+) -> Result<(), AppError> {
+    let function_instance: Option<function::Model> = Function::find()
+        .filter(Function::COLUMN.owner_id.eq(user.id))
+        .filter(Function::COLUMN.uuid.eq(function_id))
+        .one(&state.db)
+        .await
+        .context("could not fetch function to delete it")?;
+
+    let function_id = match function_instance {
+        Some(func) => func.id,
+        None => return Err(AppError::NotFound),
+    };
+
+    let run_ids: Vec<i32> = run::Entity::find()
+        .filter(run::COLUMN.function_id.eq(function_id))
+        .select_only()
+        .column(run::Column::Id)
+        .into_tuple()
+        .all(&state.db)
+        .await
+        .context("could not retrieve run ids to later remove them")?;
+
+    for chunk in run_ids.chunks(500) {
+        let delete_objects = chunk
+            .iter()
+            .flat_map(|id| {
+                [
+                    ObjectIdentifier::new(format!("/{function_id}/{id}:stdout")),
+                    ObjectIdentifier::new(format!("/{function_id}/{id}:stderr")),
+                ]
+            })
+            .collect::<Vec<ObjectIdentifier>>();
+
+        state
+            .io_executions_bucket
+            .delete_objects(delete_objects)
+            .await
+            .context("could not delete io-execution buckets")?;
+    }
+
+    state
+        .blob_bucket
+        .delete_object(function_id.to_string())
+        .await
+        .context("could not delete function binary from s3")?;
+
+    Function::delete_by_id(function_id)
+        .exec(&state.db)
+        .await
+        .context("could not delete function from db")?;
+
+    Ok(())
 }

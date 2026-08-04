@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import type { BreadcrumbItem } from '@nuxt/ui'
-import { ref, useTemplateRef } from 'vue'
-import { useRoute } from 'vue-router'
+import { onUnmounted, ref, useTemplateRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import FunctionForm from '@/components/dashboard/functions/FunctionForm.vue'
+import { $api } from '@/composables/useAPI'
 
 const route = useRoute()
+const router = useRouter()
 const formRef = useTemplateRef<InstanceType<typeof FunctionForm>>('form')
 const isFormLoading = ref(false)
+
+const abortController = new AbortController()
 
 const breadcrumbItems: BreadcrumbItem[] = [
   {
@@ -17,6 +21,19 @@ const breadcrumbItems: BreadcrumbItem[] = [
     label: route.params.name as string,
   },
 ]
+
+const deleteFunction = async (uuid: string) => {
+  try {
+    await $api(`/functions/${uuid}`, { method: 'DELETE', signal: abortController.signal })
+  } catch (e) {
+    console.log(e)
+  }
+  router.replace({ name: '' })
+}
+
+onUnmounted(() => {
+  abortController.abort()
+})
 </script>
 
 <template>
@@ -38,6 +55,14 @@ const breadcrumbItems: BreadcrumbItem[] = [
           <div class="flex gap-x-2">
             <UButton label="Cancel" variant="outline" :to="{ name: 'functions' }" />
             <UButton label="Save changes" @click="formRef?.submit()" :disabled="isFormLoading" />
+
+            <UButton
+              v-if="$route.params.name !== 'new'"
+              label="Delete function"
+              :disabled="isFormLoading"
+              color="error"
+              @click="deleteFunction($route.params.uuid as string)"
+            />
           </div>
         </template>
       </UDashboardNavbar>
