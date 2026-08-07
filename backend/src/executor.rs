@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::sync::Arc;
 
@@ -7,13 +8,29 @@ use axum::extract::Request;
 use axum::response::Response;
 use http_body_util::BodyExt;
 use wasmtime::component::{Accessor, Component, Linker, ResourceTable};
-use wasmtime::{Config, Engine, Store};
+use wasmtime::{Engine, Store};
 use wasmtime_wasi::cli::OutputFile;
 use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
 use wasmtime_wasi_http::p3::bindings::Service;
 use wasmtime_wasi_http::p3::bindings::http::types::ErrorCode;
 use wasmtime_wasi_http::p3::{Request as WasiRequest, WasiHttpView};
 use wasmtime_wasi_http::{WasiHttpCtx, p3::WasiHttpCtxView};
+
+pub struct ExecutionParams {
+    stdout_path: String,
+    stderr_path: String,
+    envs: HashMap<String, String>,
+}
+
+impl ExecutionParams {
+    pub fn new(stdout_path: String, stderr_path: String, envs: HashMap<String, String>) -> Self {
+        Self {
+            stdout_path,
+            stderr_path,
+            envs,
+        }
+    }
+}
 
 #[derive(Default)]
 struct WASMState {
@@ -75,9 +92,8 @@ async fn handle_and_collect(
 pub async fn execute_wasm(
     engine: Arc<Engine>,
     axum_req: Request,
-    stdout_filepath: &String,
-    stderr_filepath: &String,
     binary: &[u8],
+    params: ExecutionParams,
 ) -> Result<Response> {
     // Component-model async (needed for wasi:http/wasi:cli p3, which use
     // `async func`/streams/futures instead of poll-based p2 APIs).
@@ -85,40 +101,42 @@ pub async fn execute_wasm(
     // Wire up the host-side implementations of wasi:http and wasi:cli (p3)
     // so the guest can import them.
     let mut linker = Linker::<WASMState>::new(&engine);
-    wasmtime_wasi_http::p3::add_to_linker(&mut linker)?;
+    wasmtime_wasi::p2::add_to_linker_async(&mut linker)?;
     wasmtime_wasi::p3::add_to_linker(&mut linker)?;
+    wasmtime_wasi_http::p3::add_to_linker(&mut linker)?;
 
     let stdout = File::options()
         .append(true)
-        .open(stdout_filepath)
+        .open(params.stdout_path)
         .context("could not create wasi stdout")?;
 
     let stderr = File::options()
         .append(true)
-        .open(stderr_filepath)
+        .open(params.stderr_path)
         .context("could not create wasi stderr")?;
 
+    let envs = params.envs.iter().collect::<Vec<(&String, &String)>>();
+
     // Fresh per-request host state (resource table + wasi contexts).
+
     let state = WASMState {
         cli_ctx: WasiCtx::builder()
             .stdout(OutputFile::new(stdout))
             .stderr(OutputFile::new(stderr))
+            .envs(envs.as_ref())
             .build(),
         http_ctx: WasiHttpCtx::default(),
         table: ResourceTable::default(),
     };
 
     let mut store = Store::new(&engine, state);
-    
+
     // WARNING: Be careful, this code have to be deserialzed on a same version as it was compiled.
-    let component = unsafe { Component::deserialize(&engine, binary).unwrap() };
+    let component = unsafe { Component::deserialize(&engine, binary)? };
 
     // The guest must export `wasi:http/handler@0.3.0` (part of the
     // `wasi:http/service` world): `handle: async func(request) -> result<response, error-code>`.
-    let service = Service::instantiate_async(&mut store, &component, &linker)
-        .await
-        .unwrap();
-    // .context("failed to instantiate wasi:http/service world")?;
+    let service = Service::instantiate_async(&mut store, &component, &linker).await?;
 
     // Convert the incoming axum request into a wasi `Request` value.
     // `axum::Error` doesn't know how to become a wasi `error-code`, so map it first.

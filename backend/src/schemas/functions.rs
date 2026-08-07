@@ -65,7 +65,7 @@ pub struct CreateFunctionPayload {
     pub timeout: i32,
     pub envs_stringified: String,
 
-    #[form_data(limit = "4Gb")]
+    #[form_data(limit = "250MB")]
     pub wasm: FieldData<Bytes>,
 }
 

@@ -24,11 +24,15 @@ const breadcrumbItems: BreadcrumbItem[] = [
 
 const deleteFunction = async (uuid: string) => {
   try {
-    await $api(`/functions/${uuid}`, { method: 'DELETE', signal: abortController.signal })
+    await $api(`/functions/${uuid}`, {
+      method: 'DELETE',
+      signal: abortController.signal,
+      credentials: 'include',
+    })
   } catch (e) {
     console.log(e)
   }
-  router.replace({ name: '' })
+  router.replace({ name: 'functions' })
 }
 
 onUnmounted(() => {

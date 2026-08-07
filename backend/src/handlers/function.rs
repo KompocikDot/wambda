@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow};
 use axum::{
-    Json, Router,
-    extract::{Path, State},
-    http::StatusCode,
-    middleware::from_extractor,
-    routing::{get, post},
+    Json, Router, extract::{DefaultBodyLimit, Path, State}, http::StatusCode, middleware::from_extractor, routing::{get, post},
 };
 use axum_typed_multipart::TypedMultipart;
 use s3::serde_types::ObjectIdentifier;
@@ -30,15 +26,16 @@ use crate::{
 
 pub fn functions_router() -> Router<Arc<AppState>> {
     return Router::new()
-        .route("/", get(list_functions))
         .route("/", post(create_function))
+        .route_layer(DefaultBodyLimit::max(1024 * 1024 * 512)) // 512MB limit for routes above it
+        .route("/", get(list_functions))
         .route("/{function_id}", get(get_function).delete(delete_function))
         .layer(from_extractor::<AuthUser>());
 }
 
 async fn precopmile_wasm(engine: Arc<Engine>, bytes: &[u8]) -> Result<Vec<u8>, AppError> {
     let compiled_module = engine
-        .precompile_module(bytes)
+        .precompile_component(bytes)
         .map_err(|e| AppError::Internal(anyhow!("could not precompile wasm: {e}")))?;
 
     Ok(compiled_module)

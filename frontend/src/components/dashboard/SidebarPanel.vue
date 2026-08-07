@@ -17,7 +17,7 @@ const { setAuth } = useAuth()
 const abortController = new AbortController();
 
 const logout = async () => {
-  await $api("/api/logout", {credentials: 'include', signal: abortController.signal});
+  await $api("/logout", {method: "POST", credentials: 'include', signal: abortController.signal});
   userStorage.value = null
   setAuth(false)
   router.push({ name: 'main' })

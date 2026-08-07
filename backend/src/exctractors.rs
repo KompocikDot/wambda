@@ -1,4 +1,3 @@
-use anyhow::Context;
 
 use axum::{
     Json,
@@ -7,6 +6,7 @@ use axum::{
 };
 use serde_json::json;
 use tower_sessions_cookie_store::Session;
+use uuid::Uuid;
 use validator::Validate;
 
 use crate::errors::AppError;
@@ -65,7 +65,7 @@ where
     }
 }
 
-pub struct ExtractApiKey(pub String);
+pub struct ExtractApiKey(pub Uuid);
 
 impl<S> FromRequestParts<S> for ExtractApiKey
 where
@@ -74,11 +74,19 @@ where
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        let header = parts.headers.get("x-api-key").context("context")?;
+        let header_value = parts.headers.get("x-api-key");
 
-        match header.to_str() {
-            Ok(api_key) => Ok(ExtractApiKey(api_key.to_string())),
-            Err(_) => Err(AppError::Unauthorized),
-        }
+        let raw_header = match header_value {
+            Some(raw_header) => raw_header,
+            None => return Err(AppError::Unauthorized),
+        };
+
+        let stringified_header = match raw_header.to_str() {
+            Ok(api_key) => api_key.to_string(),
+            Err(_) => return Err(AppError::Unauthorized),
+        };
+
+        let uuid = Uuid::parse_str(&stringified_header).map_err(|_| AppError::Unauthorized)?;
+        Ok(ExtractApiKey(uuid))
     }
 }

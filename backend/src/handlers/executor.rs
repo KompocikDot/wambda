@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::{Context, Result};
 use axum::{
@@ -7,14 +7,14 @@ use axum::{
     response::Response,
     routing::any,
 };
-use sea_orm::{ColumnTrait, JoinType, QueryFilter, QuerySelect, RelationTrait};
+use sea_orm::{ColumnTrait, JoinType, QueryFilter, QuerySelect, RelationTrait, SelectExt};
 use tokio::fs::{self, File};
 use uuid::Uuid;
 
 use crate::{
     errors::AppError,
     exctractors::ExtractApiKey,
-    executor::execute_wasm,
+    executor::{ExecutionParams, execute_wasm},
     models::{api_key, function},
     state::AppState,
 };
@@ -33,10 +33,9 @@ async fn execute(
         .join(JoinType::InnerJoin, function::Relation::User.def())
         .join(JoinType::InnerJoin, api_key::Relation::User.def().rev())
         .filter(api_key::Column::Key.eq(x_api_key))
-        .one(&state.db)
+        .exists(&state.db)
         .await
         .context("could not create query to find api_key matching function")?
-        .is_some()
     {
         return Err(AppError::NotFound);
     }
@@ -56,11 +55,19 @@ async fn execute(
     let stdout_filepath = format!("/tmp/{id}/{run_id}:stdout");
     let stderr_filepath = format!("/tmp/{id}/{run_id}:stderr");
 
-    let mut stdout = File::open(&stdout_filepath)
+    let mut stdout = File::options()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(&stdout_filepath)
         .await
         .context("could not create wasi stdout")?;
 
-    let mut stderr = File::open(&stderr_filepath)
+    let mut stderr = File::options()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(&stderr_filepath)
         .await
         .context("could not create wasi stderr")?;
 
@@ -74,9 +81,12 @@ async fn execute(
     let resp = execute_wasm(
         state.wasmtime_engine.clone(),
         req,
-        &stdout_filepath,
-        &stderr_filepath,
         binary.as_slice(),
+        ExecutionParams::new(
+            stdout_filepath.clone(),
+            stderr_filepath.clone(),
+            HashMap::new(),
+        ),
     )
     .await?;
 

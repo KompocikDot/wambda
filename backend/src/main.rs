@@ -8,11 +8,11 @@ use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
 mod errors;
 mod exctractors;
+pub mod executor;
 mod handlers;
 mod models;
 mod schemas;
 mod state;
-pub mod executor;
 
 use tower_http::cors::CorsLayer;
 use tower_sessions_cookie_store::{CookieSessionConfig, CookieSessionManagerLayer, Key};
@@ -89,7 +89,7 @@ async fn main() -> Result<()> {
         .context("could not bind tcp listener")?;
 
     println!("starting server...");
-    
+
     axum::serve(listener, app)
         .await
         .context("could not start http server")?;
