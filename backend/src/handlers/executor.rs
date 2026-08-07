@@ -7,7 +7,11 @@ use axum::{
     response::Response,
     routing::any,
 };
-use sea_orm::{ColumnTrait, JoinType, QueryFilter, QuerySelect, RelationTrait, SelectExt};
+use chrono::Utc;
+use sea_orm::{
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, JoinType, QueryFilter, QuerySelect,
+    RelationTrait, value::ChronoUnixTimestampMillis,
+};
 use tokio::fs::{self, File};
 use uuid::Uuid;
 
@@ -15,7 +19,7 @@ use crate::{
     errors::AppError,
     exctractors::ExtractApiKey,
     executor::{ExecutionParams, execute_wasm},
-    models::{api_key, function},
+    models::{api_key, function, run},
     state::AppState,
 };
 
@@ -29,16 +33,22 @@ async fn execute(
     ExtractApiKey(x_api_key): ExtractApiKey,
     req: Request,
 ) -> Result<Response, AppError> {
-    if !function::Entity::find_by_uuid(id)
+    let trigger_time = chrono::Utc::now();
+    let func: Option<i32> = function::Entity::find_by_uuid(id)
         .join(JoinType::InnerJoin, function::Relation::User.def())
         .join(JoinType::InnerJoin, api_key::Relation::User.def().rev())
         .filter(api_key::Column::Key.eq(x_api_key))
-        .exists(&state.db)
+        .select_only()
+        .column(function::Column::Id)
+        .into_tuple()
+        .one(&state.db)
         .await
-        .context("could not create query to find api_key matching function")?
-    {
-        return Err(AppError::NotFound);
-    }
+        .context("could not create query to find api_key matching function")?;
+
+    let func_id = match func {
+        Some(id) => id,
+        None => return Err(AppError::NotFound),
+    };
 
     let run_id = Uuid::now_v7();
     let path = format!("/tmp/{id}");
@@ -78,6 +88,8 @@ async fn execute(
         .await
         .context("could not read wasm binary from bucket")?;
 
+    let start_time = Utc::now();
+    
     let resp = execute_wasm(
         state.wasmtime_engine.clone(),
         req,
@@ -89,6 +101,21 @@ async fn execute(
         ),
     )
     .await?;
+
+    let new_run = run::ActiveModel {
+        triggered_at: Set(ChronoUnixTimestampMillis(trigger_time)),
+        finish_time: Set(ChronoUnixTimestampMillis(Utc::now())),
+        started_at: Set(ChronoUnixTimestampMillis(start_time)),
+        uuid: Set(run_id),
+        status: Set(run::Status::Success), // set accordingly
+        function_id: Set(func_id),
+        ..Default::default()
+    };
+
+    new_run
+        .insert(&state.db)
+        .await
+        .context("could not insert run details into db")?;
 
     state
         .io_executions_bucket
