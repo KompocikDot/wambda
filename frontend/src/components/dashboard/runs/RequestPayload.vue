@@ -1,5 +1,25 @@
 <script setup lang="ts">
-defineProps<{ payload: string }>()
+import { computed } from 'vue'
+
+const props = defineProps<{ payload: string; details: { duration: number } }>()
+
+const duration = computed(() => {
+  const ms = props.details.duration
+  const hours = ((ms / 3600000) % 24).toFixed()
+  const minutes = ((ms / 60000) % 60).toFixed()
+  const seconds = ((ms / 1000) % 60).toFixed()
+  const milliseconds = ((ms % 1000) / 1000).toFixed()
+  
+  if (ms > 3600000) {
+    return `${hours}h ${minutes}m ${seconds}s`
+  } else if (ms > 60000) {
+    return `${minutes}m ${seconds}s`
+  } else if (ms > 1000) {
+    return `${seconds}s ${milliseconds}ms`
+  }
+
+  return `${ms}ms`
+})
 </script>
 
 <template>
@@ -14,7 +34,7 @@ defineProps<{ payload: string }>()
     <div class="w-full py-2 shrink-0">
       <div class="flex flex-row justify-between">
         <div class="text-muted text-sm">Duration</div>
-        <div class="text-highlighted font-bold">14ms</div>
+        <div class="text-highlighted font-bold">{{ duration }}</div>
       </div>
       <div class="flex flex-row justify-between">
         <div class="text-muted text-sm">Memory used</div>

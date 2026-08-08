@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::{Context, Result};
 use axum::{
     Router,
+    body::{Body, to_bytes},
     extract::{Path, Request, State},
     response::Response,
     routing::any,
@@ -81,6 +82,21 @@ async fn execute(
         .await
         .context("could not create wasi stderr")?;
 
+    // Buffer the incoming request body once so we can both upload it as the
+    // run's payload and still pass the same content through to execute_wasm.
+    let (req_parts, req_body) = req.into_parts();
+    let payload_bytes = to_bytes(req_body, usize::MAX)
+        .await
+        .context("could not read request payload")?;
+
+    state
+        .io_executions_bucket
+        .put_object(format!("/{id}/{run_id}:payload"), &payload_bytes)
+        .await
+        .context("could not write payload to bucket")?;
+
+    let req = Request::from_parts(req_parts, Body::from(payload_bytes));
+
     // TODO: Fix that path to get corrrect binary based on payload
     let binary = state
         .blob_bucket
@@ -135,5 +151,18 @@ async fn execute(
         .await
         .context("could not remove wasi stderr temp file")?;
 
-    Ok(resp)
+    // Buffer the response body once so we can both upload it to the bucket
+    // and still return the same content back to the caller.
+    let (parts, body) = resp.into_parts();
+    let body_bytes = to_bytes(body, usize::MAX)
+        .await
+        .context("could not read response body")?;
+
+    state
+        .io_executions_bucket
+        .put_object(format!("/{id}/{run_id}:response"), &body_bytes)
+        .await
+        .context("could not write response to bucket")?;
+
+    Ok(Response::from_parts(parts, Body::from(body_bytes)))
 }

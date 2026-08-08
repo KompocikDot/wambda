@@ -1,5 +1,10 @@
 <script setup lang="ts">
-defineProps<{ logs: string }>()
+import { useClipboard } from '@vueuse/core'
+
+defineProps<{ resp: string }>()
+
+const { copy } = useClipboard()
+
 </script>
 
 <template>
@@ -15,7 +20,7 @@ defineProps<{ logs: string }>()
       </div>
 
       <div class="flex self-end gap-x-2">
-        <UButton icon="i-lucide-copy" variant="outline" />
+        <UButton icon="i-lucide-copy" variant="outline" @click="copy(resp)" />
         <UButton icon="i-lucide-download" label="Download" variant="outline" />
       </div>
     </div>
@@ -26,7 +31,7 @@ defineProps<{ logs: string }>()
         variant="outline"
         :ui="{ body: 'flex-1 overflow-auto' }"
       >
-        <highlightjs language="json" :code="logs" />
+        <highlightjs language="json" :code="resp" />
       </UCard>
     </div>
   </div>

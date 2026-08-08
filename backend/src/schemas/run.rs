@@ -43,3 +43,9 @@ impl From<(run::Model, Option<function::Model>)> for RunResponse {
         }
     }
 }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunDetailsResponse {
+    pub duration: u32
+}

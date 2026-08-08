@@ -162,7 +162,7 @@ onUnmounted(() => {
         <div class="flex gap-x-2">
           <UInput
             icon="i-lucide-search"
-            placeholder="Search functions..."
+            placeholder="Search runs..."
             v-model="globalTableFilter"
           />
           <USelect
@@ -184,10 +184,10 @@ onUnmounted(() => {
             @click="setStatusFilter('success')"
           />
           <UButton
-            label="Error"
+            label="Failure"
             class="rounded-full"
-            :variant="statusFilter === 'error' ? 'subtle' : 'ghost'"
-            @click="setStatusFilter('error')"
+            :variant="statusFilter === 'failure' ? 'subtle' : 'ghost'"
+            @click="setStatusFilter('failure')"
           />
         </div>
         <UTable
