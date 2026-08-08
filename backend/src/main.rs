@@ -22,6 +22,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use crate::handlers::auth::auth_router;
 use crate::handlers::executor::executor_router;
 use crate::handlers::function::functions_router;
+use crate::handlers::run::runs_router;
 use crate::handlers::user::user_router;
 use crate::state::AppState;
 
@@ -68,6 +69,7 @@ async fn main() -> Result<()> {
         .nest("/api/user", user_router())
         .nest("/api/functions", functions_router())
         .nest("/api/execute", executor_router())
+        .nest("/api/runs", runs_router())
         .with_state(state)
         .layer(CookieSessionManagerLayer::signed(secret).with_config(session_config))
         .layer(
