@@ -9,7 +9,13 @@ const UBadge = resolveComponent('UBadge')
 const router = useRouter()
 
 const abortController = new AbortController()
-const timeFilterOptions = ['Last 24 hours', 'Last 3 days', 'Last 7 days', 'Last 30 days', 'All time']
+const timeFilterOptions = [
+  'Last 24 hours',
+  'Last 3 days',
+  'Last 7 days',
+  'Last 30 days',
+  'All time',
+]
 
 const runs = ref<Run[]>([])
 const loadingRuns = ref(false)
@@ -120,7 +126,10 @@ const setStatusFilter = (value: string) => {
 }
 
 const onRowClick = (_: Event, row: TableRow<Run>) => {
-  router.push({ name: 'singleRun', params: { id: row.getValue<string>('runId') } })
+  router.push({
+    name: 'singleRun',
+    params: { name: row.getValue<string>('functionName'), uuid: row.getValue<string>('runId') },
+  })
 }
 
 const loadRuns = async () => {
@@ -183,6 +192,7 @@ onUnmounted(() => {
         </div>
         <UTable
           v-model:global-filter="globalTableFilter"
+          sticky
           :data="filteredRuns"
           :loading="loadingRuns"
           :columns="columns"

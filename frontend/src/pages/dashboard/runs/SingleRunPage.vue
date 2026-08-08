@@ -15,8 +15,10 @@ const route = useRoute()
 const rawOutput = ref(rawLogPayload)
 
 const breadcrumbItems: BreadcrumbItem[] = [
+  { label: 'Functions', to: '/runs' },
+  { label: route.params.name as string },
   { label: 'Runs', to: '/runs' },
-  { label: route.params.id as string },
+  { label: route.params.uuid as string },
 ]
 
 const tabs: TabsItem[] = [

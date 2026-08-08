@@ -39,7 +39,7 @@ const routes = [
   },
   { path: '/runs', component: RunsPage, name: 'runs', meta: { requiresAuth: true } },
   {
-    path: '/runs/:id',
+    path: '/runs/function/:name/run/:uuid',
     component: SingleRunPage,
     name: 'singleRun',
     meta: { requiresAuth: true },
