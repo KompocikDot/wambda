@@ -1,25 +1,28 @@
 <script setup lang="ts">
 export type InvocationStat = {
-  fn: string
-  value: number
+  name: string
+  count: number
 }
 
 defineProps<{
-  invocationStats: InvocationStat[]
+  invocations: InvocationStat[]
+  loading: boolean
 }>()
 </script>
 
 <template>
   <UCard class="flex flex-col" :ui="{ body: 'bg-elevated/50 h-full' }">
-    <div class="text-highlighted font-bold">Top functions by invocations</div>
+    <div class="text-highlighted font-bold pb-2">Top functions by invocations</div>
+    <USkeleton v-if="loading" class="w-full h-80" />
     <div
-      class="flex justify-between not-last:border-b border-default pt-2"
-      v-for="stat in invocationStats"
-      :key="stat.fn"
+      v-else
+      v-for="stat in invocations"
+      class="flex justify-between not-last:border-b border-default h-80"
+      :key="stat.name"
     >
-      <div>{{ stat.fn }}</div>
-      <div class="text-highlighted font-bold">{{ stat.value }}</div>
+      <div>{{ stat.name }}</div>
+      <div class="text-highlighted font-bold">{{ stat.count }}</div>
     </div>
-    <div v-if="invocationStats.length === 0">No invocations found</div>
+    <div v-if="!loading && invocations.length === 0">No invocations found</div>
   </UCard>
 </template>

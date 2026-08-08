@@ -4,12 +4,17 @@ import { onUnmounted, ref, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FunctionForm from '@/components/dashboard/functions/FunctionForm.vue'
 import { $api } from '@/composables/useAPI'
+import { useOverlay } from '@nuxt/ui/composables/useOverlay'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const route = useRoute()
 const router = useRouter()
+const overlay = useOverlay()
+
 const formRef = useTemplateRef<InstanceType<typeof FunctionForm>>('form')
 const isFormLoading = ref(false)
 
+const modal = overlay.create(ConfirmModal)
 const abortController = new AbortController()
 
 const breadcrumbItems: BreadcrumbItem[] = [
@@ -23,6 +28,17 @@ const breadcrumbItems: BreadcrumbItem[] = [
 ]
 
 const deleteFunction = async (uuid: string) => {
+  const modalInstance = modal.open({
+    confirmColor: 'error',
+    title: 'Are you sure you want to delete this function?',
+  })
+
+  const remove = await modalInstance.result;
+  if (!remove) {
+    return;
+  }
+  
+
   try {
     await $api(`/functions/${uuid}`, {
       method: 'DELETE',

@@ -4,4 +4,5 @@ pub mod api_key;
 pub mod function;
 pub mod prelude;
 pub mod run;
+pub mod stats;
 pub mod user;

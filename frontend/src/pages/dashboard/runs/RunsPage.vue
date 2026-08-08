@@ -196,6 +196,7 @@ onUnmounted(() => {
           :data="filteredRuns"
           :loading="loadingRuns"
           :columns="columns"
+          virtualize
           @select="onRowClick"
         />
       </UDashboardPanel>

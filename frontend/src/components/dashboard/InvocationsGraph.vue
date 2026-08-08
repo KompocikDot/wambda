@@ -3,13 +3,14 @@ import { VisXYContainer, VisArea, VisLine, VisAxis } from '@unovis/vue'
 import { Scale } from '@unovis/ts'
 
 export type InvocationGraphPoint = {
-  date: string
+  timestamp: number
   totalInvocations: number
 }
 
-defineProps<{ usageData: InvocationGraphPoint[] }>()
+defineProps<{ usageData: InvocationGraphPoint[]; loading: boolean }>()
 
-const x = (d: InvocationGraphPoint) => +new Date(d.date)
+const x = (d: InvocationGraphPoint) => d.timestamp
+
 const y = (d: InvocationGraphPoint) => d.totalInvocations
 
 const xtimeScale = Scale.scaleTime()
@@ -24,8 +25,9 @@ const yTickFormat = (tick: number) => tick.toLocaleString()
 </script>
 
 <template>
-  <div class="pt-2">
-    <VisXYContainer :data="usageData" :x-scale="xtimeScale">
+  <div class="pt-2 h-full">
+    <USkeleton v-if="loading" class="w-full h-80" />
+    <VisXYContainer v-else class="h-80" :data="usageData" :x-scale="xtimeScale">
       <VisArea :x="x" :y="y" :opacity="0.3" />
       <VisLine :x="x" :y="y" :line-width="5" />
 

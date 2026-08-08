@@ -10,6 +10,7 @@ export type OverviewStat = {
 
 defineProps<{
   overviewStats: OverviewStat[]
+  loading: boolean
 }>()
 </script>
 
@@ -17,11 +18,13 @@ defineProps<{
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
     <UCard v-for="stat in overviewStats" :key="stat.header">
       <div class="text-muted text-sm">{{ stat.header }}</div>
-      <div class="text-3xl font-bold text-highlighted flex">
+      <USkeleton v-if="loading" class="h-8 w-full" />
+      <div v-else class="text-3xl font-bold text-highlighted flex">
         <div>{{ stat.value.toLocaleString() }}</div>
         <div v-if="stat.valueUnit !== undefined">{{ stat.valueUnit }}</div>
       </div>
-      <div class="text-sm flex items-center" :class="stat.summaryColor">
+      <USkeleton v-if="loading" class="h-8 w-full" />
+      <div v-else class="text-sm flex items-center" :class="stat.summaryColor">
         <UIcon v-if="stat.summaryIcon !== undefined" :name="stat.summaryIcon" />
         <div>{{ stat.summary }}</div>
       </div>

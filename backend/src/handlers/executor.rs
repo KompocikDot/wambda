@@ -29,7 +29,7 @@ pub fn executor_router() -> Router<Arc<AppState>> {
 
 async fn execute(
     State(state): State<Arc<AppState>>,
-    Path((id, end_path)): Path<(Uuid, String)>,
+    Path((id, _end_path)): Path<(Uuid, String)>,
     ExtractApiKey(x_api_key): ExtractApiKey,
     req: Request,
 ) -> Result<Response, AppError> {
@@ -89,7 +89,7 @@ async fn execute(
         .context("could not read wasm binary from bucket")?;
 
     let start_time = Utc::now();
-    
+
     let resp = execute_wasm(
         state.wasmtime_engine.clone(),
         req,

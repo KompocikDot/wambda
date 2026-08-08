@@ -187,12 +187,13 @@ onMounted(() => {
         <UTable
           v-else
           v-model:global-filter="globalTableFilter"
-          sticky
           :data="filteredFunctions"
           :loading="loading"
           :columns="columns"
-          @select="onRowClick"
+          virtualize
+          sticky
           class="h-full"
+          @select="onRowClick"
         />
       </UDashboardPanel>
     </div>

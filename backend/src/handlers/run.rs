@@ -16,7 +16,6 @@ pub fn runs_router() -> Router<Arc<AppState>> {
     return Router::new().route("/", get(list_runs));
 }
 
-#[axum::debug_handler]
 async fn list_runs(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
