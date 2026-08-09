@@ -17,6 +17,7 @@ rust-s3 = "0.37.2"
 sea-orm = { version = "2.0.0-rc.34", features = ["sqlx-postgres", "macros", "with-time", "with-json", "runtime-tokio-native-tls", "schema-sync", "entity-registry"] }
 serde = { version = "1.0.228", features = ["derive", "std"] }
 serde_json = "1.0.150"
+sha256 = "1.6.0"
 tokio = { version = "1.52.3", features = ["full"] }
 tower-http = { version = "0.7.0", features = ["cors"] }
 tower-sessions = { version = "0.14", features = ["private", "signed"] }

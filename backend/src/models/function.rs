@@ -59,6 +59,8 @@ pub struct Model {
     pub timeout: i32,
     pub envs: String,
 
+    pub wasm_hash: String,
+
     pub owner_id: i32,
     #[sea_orm(belongs_to, from = "owner_id", to = "id", on_delete="Cascade")]
     pub owner: HasOne<super::user::Entity>,

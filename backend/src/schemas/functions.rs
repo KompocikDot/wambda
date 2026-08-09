@@ -162,3 +162,13 @@ impl From<Vec<MainPageFunctionQuery>> for MainPageFunctionsResponse {
         }
     }
 }
+
+#[derive(Validate, Deserialize)]
+pub struct UpdateFunctionPayload {
+    pub name: String,
+    pub language: Language,
+    pub trigger: Trigger,
+    pub memory_limit: i32,
+    pub timeout: i32,
+    pub envs_stringified: String,
+}

@@ -20,7 +20,7 @@ export const EnvVarSchema = v.object({
   value: v.string(),
 });
 
-export const CreateFunctionSchema = v.object({
+export const CreateUpdateFunctionSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Function name is required')),
   language: LanguageSchema,
   trigger: TriggerSchema,
@@ -31,7 +31,9 @@ export const CreateFunctionSchema = v.object({
   wasm: v.instance(File, 'Please upload a valid WebAssembly file'),
 });
 
-export type CreateFunctionInput = v.InferInput<typeof CreateFunctionSchema>;
-export type CreateFunctionOutput = v.InferOutput<typeof CreateFunctionSchema>;
+
+
+export type CreateUpdateFunctionInput = v.InferInput<typeof CreateUpdateFunctionSchema>;
+export type CreateUpdateFunctionOutput = v.InferOutput<typeof CreateUpdateFunctionSchema>;
 export type EnvVarInput = v.InferInput<typeof EnvVarSchema>;
 export type EnvVarOutput = v.InferOutput<typeof EnvVarSchema>;

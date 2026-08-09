@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { $api } from '@/composables/useAPI'
 import {
-  CreateFunctionSchema,
+  CreateUpdateFunctionSchema,
   Language,
   Trigger,
-  type CreateFunctionInput,
-  type CreateFunctionOutput,
+  type CreateUpdateFunctionInput,
+  type CreateUpdateFunctionOutput,
   type EnvVarInput,
   type EnvVarOutput,
 } from '@/schemas/function'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { onMounted, reactive, useTemplateRef } from 'vue'
+import { computed, onMounted, reactive, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
 
 const languages = [
@@ -29,8 +29,9 @@ const triggers = [
 const route = useRoute()
 const form = useTemplateRef<HTMLFormElement>('form')
 const loading = defineModel<boolean>('loading', { default: false })
+const isNewForm = computed(() => route.params.uuid === 'new' && route.params.name === 'new')
 
-const formState = reactive<CreateFunctionInput>({
+const formState = reactive<CreateUpdateFunctionInput>({
   name: '',
   language: Language.RUST,
   trigger: Trigger.HTTP,
@@ -78,14 +79,13 @@ const stringifyEnvVariables = (envs: EnvVarOutput[]): string => {
   return stringifiedEnvs
 }
 
-const onSubmit = async (event: FormSubmitEvent<CreateFunctionOutput>) => {
-  const newForm = route.params.uuid === 'new'
-  const method = newForm ? 'POST' : 'PATCH'
-  const endpoint = newForm ? '/functions' : `/functions/${route.params.uuid}`
+const onSubmit = async (event: FormSubmitEvent<CreateUpdateFunctionOutput>) => {
+  const method = isNewForm.value ? 'POST' : 'PATCH'
+  const endpoint = isNewForm.value ? '/functions' : `/functions/${route.params.uuid}`
 
   const payload = new FormData()
   payload.append('name', event.data.name)
-  payload.append('wasm', event.data.wasm!)
+  payload.append('wasm', event.data.wasm)
   payload.append('language', event.data.language)
   payload.append('memoryLimit', event.data.memoryLimit.toString())
   payload.append('timeout', event.data.timeout.toString())
@@ -114,7 +114,6 @@ const onLoad = async () => {
     formState.timeout = functionData.timeout
     formState.trigger = functionData.trigger
     formState.envs = functionData.envs
-    formState.wasm = functionData.wasm
   } catch (e) {
     console.error(e)
   }
@@ -127,7 +126,7 @@ defineExpose({
 })
 
 onMounted(() => {
-  if (route.params.uuid !== undefined && route.params.name !== undefined) {
+  if (!isNewForm.value) {
     onLoad()
   }
 })
@@ -139,7 +138,7 @@ onMounted(() => {
     class="flex gap-x-4"
     :state="formState"
     @submit="onSubmit"
-    :schema="CreateFunctionSchema"
+    :schema="CreateUpdateFunctionSchema"
   >
     <div class="flex flex-col w-2/3 gap-y-2">
       <UFormField label="Function name" class="w-full" name="name" required>
