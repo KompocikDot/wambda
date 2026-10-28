@@ -34,31 +34,64 @@ const stats = reactive<{
   },
 })
 
-const overviewStats: OverviewStat[] = computed(() => {
+const valueToIcon = (value: number): string | undefined => {
+  if (value > 0) {
+    return 'i-lucide-arrow-up'
+  } else if (value === 0) {
+    return undefined
+  } else {
+    return 'i-lucide-arrow-down'
+  }
+}
+
+const overviewStats = computed<OverviewStat[]>(() => {
   return [
     {
       header: 'Total invocations (24h)',
       value: stats.metrics.totalInvocations,
-      summary: `${stats.metrics.invocationsChangePct}% vs yesterday`,
-      summaryIcon:
-        stats.metrics.invocationsChangePct > 0 ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down',
-      summaryColor: stats.metrics.invocationsChangePct > 0 ? 'text-success' : 'text-error',
+      summary:
+        stats.metrics.invocationsChangePct !== 0
+          ? `${stats.metrics.invocationsChangePct} vs yesterday`
+          : 'no changes vs yesterday',
+      summaryIcon: valueToIcon(stats.metrics.invocationsChangePct),
+      summaryColor:
+        stats.metrics.invocationsChangePct > 0
+          ? 'text-success'
+          : stats.metrics.invocationsChangePct === 0
+            ? 'text-muted'
+            : 'text-error',
     },
     {
       header: 'Avg latency',
       value: stats.metrics.avgLatencyMs,
       valueUnit: 'ms',
-      summary: `${stats.metrics.latencyChangeMs} ms vs yesterday`,
-      summaryIcon: stats.metrics.latencyChangeMs > 0 ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down',
-      summaryColor: stats.metrics.latencyChangeMs > 0 ? 'text-error' : 'text-success',
+      summary:
+        stats.metrics.latencyChangeMs !== 0
+          ? `${stats.metrics.latencyChangeMs} ms vs yesterday`
+          : 'no changes vs yesterday',
+      summaryIcon: valueToIcon(stats.metrics.latencyChangeMs),
+      summaryColor:
+        stats.metrics.latencyChangeMs > 0
+          ? 'text-error'
+          : stats.metrics.latencyChangeMs === 0
+            ? 'text-muted'
+            : 'text-success',
     },
     {
       header: 'Error rate',
       value: stats.metrics.errorRatePct,
       valueUnit: '%',
-      summary: `${stats.metrics.errorRateChangePct}% vs yesterday`,
-      summaryIcon: stats.metrics.errorRateChangePct > 0 ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down',
-      summaryColor: stats.metrics.errorRateChangePct > 0 ? 'text-error' : 'text-success',
+      summary:
+        stats.metrics.errorRateChangePct !== 0
+          ? `${stats.metrics.errorRateChangePct}% vs yesterday`
+          : 'no changes vs yesterday',
+      summaryIcon: valueToIcon(stats.metrics.errorRateChangePct),
+      summaryColor:
+        stats.metrics.errorRateChangePct > 0
+          ? 'text-error'
+          : stats.metrics.errorRateChangePct === 0
+            ? 'text-muted'
+            : 'text-success',
     },
     {
       header: 'Active functions',
@@ -108,7 +141,11 @@ onUnmounted(() => {
             <div class="text-highlighted font-bold">Invocations over time</div>
             <InvocationsGraph :loading="loadingStats" :usage-data="stats.invocationTimeline" />
           </UCard>
-          <InvocationsList :loading="loadingStats" class="w-full md:w-2/5" :invocations="stats.invocations" />
+          <InvocationsList
+            :loading="loadingStats"
+            class="w-full md:w-2/5"
+            :invocations="stats.invocations"
+          />
         </div>
       </UDashboardPanel>
     </div>

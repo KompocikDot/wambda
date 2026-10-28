@@ -9,6 +9,7 @@ use axum::{
     routing::any,
 };
 use chrono::Utc;
+use log::info;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, JoinType, QueryFilter, QuerySelect,
     RelationTrait, value::ChronoUnixTimestampMillis,
@@ -34,6 +35,8 @@ async fn execute(
     ExtractApiKey(x_api_key): ExtractApiKey,
     req: Request,
 ) -> Result<Response, AppError> {
+    info!("starting function execution {id}");
+
     let trigger_time = chrono::Utc::now();
     let func: Option<i32> = function::Entity::find_by_uuid(id)
         .join(JoinType::InnerJoin, function::Relation::User.def())
@@ -51,6 +54,8 @@ async fn execute(
         None => return Err(AppError::NotFound),
     };
 
+    info!("function with {id} exists");
+
     let run_id = Uuid::now_v7();
     let path = format!("/tmp/{id}");
 
@@ -58,9 +63,11 @@ async fn execute(
         .await
         .context("could not check if tmp path exists")?
     {
+        info!("creating temp dir for function {id}");
         fs::create_dir(path)
             .await
             .context("could not create tmp directory for run")?;
+        info!("created temp dir for function {id}");
     }
 
     let stdout_filepath = format!("/tmp/{id}/{run_id}:stdout");
@@ -73,6 +80,7 @@ async fn execute(
         .open(&stdout_filepath)
         .await
         .context("could not create wasi stdout")?;
+    info!("created stdout for function {id}");
 
     let mut stderr = File::options()
         .create(true)
@@ -81,6 +89,7 @@ async fn execute(
         .open(&stderr_filepath)
         .await
         .context("could not create wasi stderr")?;
+    info!("created stderr for function {id}");
 
     // Buffer the incoming request body once so we can both upload it as the
     // run's payload and still pass the same content through to execute_wasm.
@@ -95,21 +104,21 @@ async fn execute(
         .await
         .context("could not write payload to bucket")?;
 
+    info!("uploaded function {id} payload into bucket");
+
     let req = Request::from_parts(req_parts, Body::from(payload_bytes));
 
-    // TODO: Fix that path to get corrrect binary based on payload
-    let binary = state
-        .blob_bucket
-        .get_object(id.to_string())
-        .await
-        .context("could not read wasm binary from bucket")?;
+    let binary = state.get_binary(id).await?;
+
+    info!("got binary for function {id}");
 
     let start_time = Utc::now();
 
+    info!("starting function {id} execution");
     let resp = execute_wasm(
         state.wasmtime_engine.clone(),
         req,
-        binary.as_slice(),
+        &binary,
         ExecutionParams::new(
             stdout_filepath.clone(),
             stderr_filepath.clone(),
@@ -117,6 +126,8 @@ async fn execute(
         ),
     )
     .await?;
+
+    info!("finished execution of function {id}");
 
     let new_run = run::ActiveModel {
         triggered_at: Set(ChronoUnixTimestampMillis(trigger_time)),
@@ -133,16 +144,20 @@ async fn execute(
         .await
         .context("could not insert run details into db")?;
 
+    info!("inserted function {id} execution details into db");
+
     state
         .io_executions_bucket
         .put_object_stream(&mut stdout, format!("/{id}/{run_id}:stdout"))
         .await
         .context("could not write stdout to bucket")?;
+    info!("saved function {id} stdout into bucket");
     state
         .io_executions_bucket
         .put_object_stream(&mut stderr, format!("/{id}/{run_id}:stderr"))
         .await
         .context("could not write stderr to bucket")?;
+    info!("saved function {id} stderr into bucket");
 
     fs::remove_file(stdout_filepath)
         .await
@@ -150,6 +165,8 @@ async fn execute(
     fs::remove_file(stderr_filepath)
         .await
         .context("could not remove wasi stderr temp file")?;
+
+    info!("removed function {id} tmp files");
 
     // Buffer the response body once so we can both upload it to the bucket
     // and still return the same content back to the caller.
@@ -163,6 +180,8 @@ async fn execute(
         .put_object(format!("/{id}/{run_id}:response"), &body_bytes)
         .await
         .context("could not write response to bucket")?;
+
+    info!("saved response of function {id}");
 
     Ok(Response::from_parts(parts, Body::from(body_bytes)))
 }

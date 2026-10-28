@@ -1,8 +1,14 @@
 use anyhow::{Context, Result};
+use log::warn;
+use moka::future::Cache;
 use s3::{Bucket, BucketConfiguration, Region, creds::Credentials};
 use sea_orm::{Database, DatabaseConnection};
 use std::{env, sync::Arc};
+use uuid::Uuid;
 use wasmtime::{Config, Engine};
+
+/// Max total size (in bytes) of wasm binaries kept in `binaries_cache`.
+pub const BINARIES_CACHE_MAX_CAPACITY: u64 = 1024 * 1024 * 1024 * 4; // 4Gb
 
 #[derive(Clone)]
 pub struct AppState {
@@ -11,6 +17,7 @@ pub struct AppState {
     pub io_executions_bucket: Arc<Bucket>,
     pub debug_mode: bool,
     pub wasmtime_engine: Arc<Engine>,
+    binaries_cache: Cache<Uuid, Arc<Vec<u8>>>,
 }
 
 impl AppState {
@@ -87,6 +94,40 @@ impl AppState {
             io_executions_bucket: Arc::from(executions_io_bucket),
             debug_mode,
             wasmtime_engine: Arc::from(engine),
+            binaries_cache: Cache::builder()
+                .max_capacity(BINARIES_CACHE_MAX_CAPACITY)
+                .weigher(|_key, val: &Arc<Vec<u8>>| val.len() as u32)
+                .build(),
         });
+    }
+
+    pub async fn get_binary(&self, id: Uuid) -> Result<Arc<Vec<u8>>> {
+        if let Some(binary) = self.binaries_cache.get(&id).await {
+            return Ok(binary);
+        }
+
+        let bytes = self
+            .blob_bucket
+            .get_object(&id.to_string())
+            .await
+            .context("could not read wasm binary from bucket")?
+            .to_vec();
+        let binary = Arc::new(bytes);
+
+        if binary.len() as u64 > BINARIES_CACHE_MAX_CAPACITY {
+            warn!(
+                "binary for function {id} is {} bytes, exceeding cache capacity of {} bytes; \
+                 skipping cache and serving directly from bucket",
+                binary.len(),
+                BINARIES_CACHE_MAX_CAPACITY
+            );
+            return Ok(binary);
+        }
+
+        self.binaries_cache
+            .insert(id, binary.clone())
+            .await;
+
+        Ok(binary)
     }
 }

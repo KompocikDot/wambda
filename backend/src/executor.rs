@@ -10,6 +10,7 @@ use http_body_util::BodyExt;
 use wasmtime::component::{Accessor, Component, Linker, ResourceTable};
 use wasmtime::{Engine, Store};
 use wasmtime_wasi::cli::OutputFile;
+use wasmtime_wasi::p0::types::Preopentype::Dir;
 use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
 use wasmtime_wasi_http::p3::bindings::Service;
 use wasmtime_wasi_http::p3::bindings::http::types::ErrorCode;
@@ -115,6 +116,8 @@ pub async fn execute_wasm(
         .open(params.stderr_path)
         .context("could not create wasi stderr")?;
 
+    let temp_dir = 
+
     let envs = params.envs.iter().collect::<Vec<(&String, &String)>>();
 
     // Fresh per-request host state (resource table + wasi contexts).
@@ -124,6 +127,7 @@ pub async fn execute_wasm(
             .stdout(OutputFile::new(stdout))
             .stderr(OutputFile::new(stderr))
             .envs(envs.as_ref())
+            .preopened_dir(, guest_path, dir_perms, file_perms)
             .build(),
         http_ctx: WasiHttpCtx::default(),
         table: ResourceTable::default(),

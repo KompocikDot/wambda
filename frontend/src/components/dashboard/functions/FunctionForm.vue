@@ -2,8 +2,6 @@
 import { $api } from '@/composables/useAPI'
 import {
   CreateUpdateFunctionSchema,
-  Language,
-  Trigger,
   type CreateUpdateFunctionInput,
   type CreateUpdateFunctionOutput,
   type EnvVarInput,
@@ -13,19 +11,6 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { computed, onMounted, reactive, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
 
-const languages = [
-  { label: 'C', value: 'c' },
-  { label: 'Go', value: 'go' },
-  { label: 'Javascript', value: 'javascript' },
-  { label: 'Python', value: 'python' },
-  { label: 'Rust', value: 'rust' },
-]
-
-const triggers = [
-  { label: 'HTTP endpoint', value: 'http' },
-  { label: 'Cron', value: 'cron' },
-]
-
 const route = useRoute()
 const form = useTemplateRef<HTMLFormElement>('form')
 const loading = defineModel<boolean>('loading', { default: false })
@@ -33,8 +18,6 @@ const isNewForm = computed(() => route.params.uuid === 'new' && route.params.nam
 
 const formState = reactive<CreateUpdateFunctionInput>({
   name: '',
-  language: Language.RUST,
-  trigger: Trigger.HTTP,
   memoryLimit: 32,
   timeout: 5000,
   envs: [],
@@ -86,10 +69,8 @@ const onSubmit = async (event: FormSubmitEvent<CreateUpdateFunctionOutput>) => {
   const payload = new FormData()
   payload.append('name', event.data.name)
   payload.append('wasm', event.data.wasm)
-  payload.append('language', event.data.language)
   payload.append('memoryLimit', event.data.memoryLimit.toString())
   payload.append('timeout', event.data.timeout.toString())
-  payload.append('trigger', event.data.trigger)
   payload.append('envsStringified', stringifyEnvVariables(event.data.envs))
 
   try {
@@ -109,10 +90,8 @@ const onLoad = async () => {
   try {
     const functionData = await $api(`/functions/${route.params.uuid}`, { credentials: 'include' })
     formState.name = functionData.name
-    formState.language = functionData.language
     formState.memoryLimit = functionData.memoryLimit
     formState.timeout = functionData.timeout
-    formState.trigger = functionData.trigger
     formState.envs = functionData.envs
   } catch (e) {
     console.error(e)
@@ -150,26 +129,6 @@ onMounted(() => {
           v-model="formState.name"
         />
       </UFormField>
-      <div class="flex gap-x-2">
-        <UFormField label="Language" class="w-1/2" name="language" required>
-          <USelect
-            class="w-full"
-            :items="languages"
-            :loading="loading"
-            :disabled="loading"
-            v-model="formState.language"
-          />
-        </UFormField>
-        <UFormField label="Trigger" class="w-1/2" name="trigger" required>
-          <USelect
-            class="w-full"
-            :items="triggers"
-            :loading="loading"
-            :disabled="loading"
-            v-model="formState.trigger"
-          />
-        </UFormField>
-      </div>
       <div class="flex gap-x-2">
         <UFormField label="Memory limit (Mb)" class="w-1/2" name="memoryLimit" required>
           <UInput

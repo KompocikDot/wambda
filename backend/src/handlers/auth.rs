@@ -11,10 +11,9 @@ use axum::{
     http::StatusCode,
     routing::{get, patch, post},
 };
+use log::{info, warn};
 use sea_orm::{
-    ActiveModelTrait,
-    ActiveValue::{Set, Unchanged},
-    ColumnTrait, EntityTrait, QueryFilter, QuerySelect,
+    ActiveModelTrait, ActiveValue::{Set, Unchanged}, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, TransactionTrait,
 };
 use serde_json::json;
 use tower_sessions_cookie_store::Session;
@@ -55,12 +54,15 @@ async fn register_user(
         .context("Failed to create hash")?
         .to_string();
 
+    
     let new_user = user::ActiveModel {
         full_name: Set(payload.full_name),
         email: Set(payload.email),
         password: Set(password_hash),
         ..Default::default()
     };
+
+    let txn = state.db.begin().await.context("could not start transaction")?;
 
     let user = new_user
         .insert(&state.db)
@@ -77,6 +79,10 @@ async fn register_user(
         .insert(&state.db)
         .await
         .context("could not insert api key into the db")?;
+
+    txn.commit().await.context("could not commit transaction")?;
+
+    info!("new user={} created", user.email);
 
     return Ok((
         StatusCode::CREATED,
@@ -107,6 +113,7 @@ async fn login_user(
     );
 
     if passwords_identical.is_err() {
+        warn!("could not login, invalid passwords");
         return Err(AppError::InvalidRequest(
             json!({"global": "invalid email or password"}),
         ));
@@ -126,12 +133,13 @@ async fn login_user(
     ));
 }
 
-async fn logout(_: AuthUser, session: Session) -> Result<StatusCode, AppError> {
+async fn logout(user: AuthUser, session: Session) -> Result<StatusCode, AppError> {
     session
         .delete()
         .await
         .context("could not remove session on logout")?;
 
+    info!("user={} successfully logged out", user.id);
     return Ok(StatusCode::OK);
 }
 

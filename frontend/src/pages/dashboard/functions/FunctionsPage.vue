@@ -8,7 +8,6 @@ import { useRouter } from 'vue-router'
 type Function = {
   uuid: string
   name: string
-  language: string
   status: 'active' | 'degraded' | 'disabled'
   avgLatencyMs: number | null
   invocations: number
@@ -34,15 +33,6 @@ const columns: TableColumn<Function>[] = [
       class: {
         td: 'text-highlighted font-bold',
       },
-    },
-  },
-  {
-    accessorKey: 'language',
-    header: 'language',
-    cell: ({ row }) => {
-      const label = row.getValue<string>('language')
-      const capitalizedLabel = label[0]?.toUpperCase() + label.slice(1)
-      return capitalizedLabel
     },
   },
   {

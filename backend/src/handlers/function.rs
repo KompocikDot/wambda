@@ -24,7 +24,7 @@ use crate::{
     },
     schemas::functions::{
         CreateFunctionPayload, CreateFunctionResponse, MainPageFunctionsResponse,
-        SingleFunctionResponse, UpdateFunctionPayload,
+        SingleFunctionResponse,
     },
     state::AppState,
 };
@@ -68,8 +68,6 @@ async fn create_function(
     let new_fn = function::ActiveModel {
         name: Set(payload.name.clone()),
         uuid: Set(uuid),
-        language: Set(payload.language.clone().into()),
-        trigger: Set(payload.trigger.clone().into()),
         memory_limit: Set(payload.memory_limit),
         timeout: Set(payload.timeout),
         envs: Set(payload.envs_stringified.clone()),
@@ -210,8 +208,6 @@ async fn update_function(
 
     let update_function = function::ActiveModel {
         name: Set(payload.name.clone()),
-        language: Set(payload.language.clone().into()),
-        trigger: Set(payload.trigger.clone().into()),
         memory_limit: Set(payload.memory_limit),
         timeout: Set(payload.timeout),
         envs: Set(payload.envs_stringified.clone()),
