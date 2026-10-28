@@ -70,9 +70,13 @@ async fn execute(
         info!("created temp dir for function {id}");
     }
 
+    
+    let workdir_filepath = format!("/tmp/{id}/{run_id}/data");
     let stdout_filepath = format!("/tmp/{id}/{run_id}:stdout");
     let stderr_filepath = format!("/tmp/{id}/{run_id}:stderr");
 
+    fs::create_dir_all(&workdir_filepath).await.context("could not create workdir")?;
+    
     let mut stdout = File::options()
         .create(true)
         .read(true)
@@ -115,17 +119,18 @@ async fn execute(
     let start_time = Utc::now();
 
     info!("starting function {id} execution");
-    let resp = execute_wasm(
+    let result = execute_wasm(
         state.wasmtime_engine.clone(),
         req,
         &binary,
         ExecutionParams::new(
             stdout_filepath.clone(),
             stderr_filepath.clone(),
+            workdir_filepath.clone(),
             HashMap::new(),
         ),
     )
-    .await?;
+    .await;
 
     info!("finished execution of function {id}");
 

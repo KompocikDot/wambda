@@ -86,6 +86,8 @@ impl AppState {
 
         let mut wasmtime_config = Config::new();
         wasmtime_config.wasm_component_model_async(true);
+        wasmtime_config.epoch_interruption(true);
+        
         let engine = Engine::new(&wasmtime_config)?;
 
         return Ok(Self {

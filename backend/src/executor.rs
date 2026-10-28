@@ -8,10 +8,9 @@ use axum::extract::Request;
 use axum::response::Response;
 use http_body_util::BodyExt;
 use wasmtime::component::{Accessor, Component, Linker, ResourceTable};
-use wasmtime::{Engine, Store};
+use wasmtime::{Engine, ResourceLimiterAsync, Store};
 use wasmtime_wasi::cli::OutputFile;
-use wasmtime_wasi::p0::types::Preopentype::Dir;
-use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
+use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxView, WasiView};
 use wasmtime_wasi_http::p3::bindings::Service;
 use wasmtime_wasi_http::p3::bindings::http::types::ErrorCode;
 use wasmtime_wasi_http::p3::{Request as WasiRequest, WasiHttpView};
@@ -21,14 +20,21 @@ pub struct ExecutionParams {
     stdout_path: String,
     stderr_path: String,
     envs: HashMap<String, String>,
+    workdir_path: String,
 }
 
 impl ExecutionParams {
-    pub fn new(stdout_path: String, stderr_path: String, envs: HashMap<String, String>) -> Self {
+    pub fn new(
+        stdout_path: String,
+        stderr_path: String,
+        workdir_path: String,
+        envs: HashMap<String, String>,
+    ) -> Self {
         Self {
             stdout_path,
             stderr_path,
             envs,
+            workdir_path,
         }
     }
 }
@@ -116,8 +122,6 @@ pub async fn execute_wasm(
         .open(params.stderr_path)
         .context("could not create wasi stderr")?;
 
-    let temp_dir = 
-
     let envs = params.envs.iter().collect::<Vec<(&String, &String)>>();
 
     // Fresh per-request host state (resource table + wasi contexts).
@@ -127,7 +131,7 @@ pub async fn execute_wasm(
             .stdout(OutputFile::new(stdout))
             .stderr(OutputFile::new(stderr))
             .envs(envs.as_ref())
-            .preopened_dir(, guest_path, dir_perms, file_perms)
+            .preopened_dir(params.workdir_path, "/tmp", DirPerms::all(), FilePerms::all())?
             .build(),
         http_ctx: WasiHttpCtx::default(),
         table: ResourceTable::default(),
