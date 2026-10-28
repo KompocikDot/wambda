@@ -75,9 +75,10 @@ async fn execute(
     }
 
     
-    let workdir_filepath = format!("/tmp/{id}/{run_id}/data");
-    let stdout_filepath = format!("/tmp/{id}/{run_id}:stdout");
-    let stderr_filepath = format!("/tmp/{id}/{run_id}:stderr");
+    let run_dir = format!("/tmp/{id}/{run_id}");
+    let workdir_filepath = format!("{run_dir}/data");
+    let stdout_filepath = format!("{run_dir}:stdout");
+    let stderr_filepath = format!("{run_dir}:stderr");
 
     fs::create_dir_all(&workdir_filepath).await.context("could not create workdir")?;
     
@@ -123,7 +124,7 @@ async fn execute(
     let start_time = Utc::now();
 
     info!("starting function {id} execution");
-    let resp = execute_wasm(
+    let result = execute_wasm(
         state.wasmtime_engine.clone(),
         req,
         &binary,
@@ -136,16 +137,25 @@ async fn execute(
             timeout,
         ),
     )
-    .await?;
+    .await;
 
     info!("finished execution of function {id}");
+
+    // The working directory is only scratch space for the guest, also removed after a failure.
+    fs::remove_dir_all(&run_dir)
+        .await
+        .context("could not remove run directory")?;
 
     let new_run = run::ActiveModel {
         triggered_at: Set(ChronoUnixTimestampMillis(trigger_time)),
         finish_time: Set(ChronoUnixTimestampMillis(Utc::now())),
         started_at: Set(ChronoUnixTimestampMillis(start_time)),
         uuid: Set(run_id),
-        status: Set(run::Status::Success), // set accordingly
+        status: Set(if result.is_ok() {
+            run::Status::Success
+        } else {
+            run::Status::Failure
+        }),
         function_id: Set(func_id),
         ..Default::default()
     };
@@ -178,6 +188,9 @@ async fn execute(
         .context("could not remove wasi stderr temp file")?;
 
     info!("removed function {id} tmp files");
+
+    // Everything is stored and cleaned up, so the execution error can be returned now.
+    let resp = result?;
 
     // Buffer the response body once so we can both upload it to the bucket
     // and still return the same content back to the caller.

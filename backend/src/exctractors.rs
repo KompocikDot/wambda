@@ -2,7 +2,7 @@
 use axum::{
     Json,
     extract::{FromRequest, FromRequestParts, Request},
-    http::request::Parts,
+    http::{header::AUTHORIZATION, request::Parts},
 };
 use serde_json::json;
 use tower_sessions_cookie_store::Session;
@@ -74,7 +74,7 @@ where
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        let header_value = parts.headers.get("x-api-key");
+        let header_value = parts.headers.get(AUTHORIZATION);
 
         let raw_header = match header_value {
             Some(raw_header) => raw_header,
@@ -82,11 +82,15 @@ where
         };
 
         let stringified_header = match raw_header.to_str() {
-            Ok(api_key) => api_key.to_string(),
+            Ok(value) => value,
             Err(_) => return Err(AppError::Unauthorized),
         };
 
-        let uuid = Uuid::parse_str(&stringified_header).map_err(|_| AppError::Unauthorized)?;
+        let api_key = stringified_header
+            .strip_prefix("Bearer ")
+            .ok_or(AppError::Unauthorized)?;
+
+        let uuid = Uuid::parse_str(api_key.trim()).map_err(|_| AppError::Unauthorized)?;
         Ok(ExtractApiKey(uuid))
     }
 }
