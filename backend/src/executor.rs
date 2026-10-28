@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use axum::body::{Body as AxumBody, Bytes};
@@ -8,7 +9,7 @@ use axum::extract::Request;
 use axum::response::Response;
 use http_body_util::BodyExt;
 use wasmtime::component::{Accessor, Component, Linker, ResourceTable};
-use wasmtime::{Engine, ResourceLimiterAsync, Store};
+use wasmtime::{Engine, Store, StoreLimits, StoreLimitsBuilder};
 use wasmtime_wasi::cli::OutputFile;
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxView, WasiView};
 use wasmtime_wasi_http::p3::bindings::Service;
@@ -21,6 +22,8 @@ pub struct ExecutionParams {
     stderr_path: String,
     envs: HashMap<String, String>,
     workdir_path: String,
+    memory_bytes: usize,
+    timeout: Duration,
 }
 
 impl ExecutionParams {
@@ -29,12 +32,16 @@ impl ExecutionParams {
         stderr_path: String,
         workdir_path: String,
         envs: HashMap<String, String>,
+        memory_bytes: usize,
+        timeout: Duration,
     ) -> Self {
         Self {
             stdout_path,
             stderr_path,
             envs,
             workdir_path,
+            memory_bytes,
+            timeout,
         }
     }
 }
@@ -44,6 +51,7 @@ struct WASMState {
     table: ResourceTable,
     http_ctx: WasiHttpCtx,
     cli_ctx: WasiCtx,
+    limits: StoreLimits,
 }
 
 impl WasiHttpView for WASMState {
@@ -65,26 +73,18 @@ impl WasiView for WASMState {
     }
 }
 
-// Calls the guest's `handle` export and turns the wasi `Response` resource
-// into a plain, fully-buffered `http::Response`.
-//
-// Returns `Ok(Err(code))` for a wasi-level error-code (e.g. guest rejected the
-// request); returns `Err(_)` only for host-side failures (traps, wasmtime errors).
 async fn handle_and_collect(
     accessor: &Accessor<WASMState>,
     service: &Service,
     req: WasiRequest,
 ) -> Result<Result<http::Response<Bytes>, ErrorCode>> {
-    // Invoke the guest's exported `handle` function with our request resource.
     let res = match service.handle(accessor, req).await? {
         Ok(res) => res,
-        Err(code) => return Ok(Err(code)), // guest returned an http error-code, not a trap
+        Err(code) => return Ok(Err(code)),
     };
-    // Convert the wasi `Response` resource into an `http::Response` with a
-    // streaming body; `store` is borrowed briefly via `accessor.with`.
+
     let res = accessor.with(|store| res.into_http(store, async { Ok(()) }))?;
     let (parts, body) = res.into_parts();
-    // Drain the streaming body into memory so we can hand back a plain response.
     let bytes = body
         .collect()
         .await
@@ -93,20 +93,12 @@ async fn handle_and_collect(
     Ok(Ok(http::Response::from_parts(parts, bytes)))
 }
 
-/// Loads a wasm component from `binary`, instantiates it against the
-/// `wasi:http/service` world, forwards `axum_req` to its `handle` export, and
-/// converts the guest's response back into an axum `Response`.
 pub async fn execute_wasm(
     engine: Arc<Engine>,
     axum_req: Request,
     binary: &[u8],
     params: ExecutionParams,
 ) -> Result<Response> {
-    // Component-model async (needed for wasi:http/wasi:cli p3, which use
-    // `async func`/streams/futures instead of poll-based p2 APIs).
-
-    // Wire up the host-side implementations of wasi:http and wasi:cli (p3)
-    // so the guest can import them.
     let mut linker = Linker::<WASMState>::new(&engine);
     wasmtime_wasi::p2::add_to_linker_async(&mut linker)?;
     wasmtime_wasi::p3::add_to_linker(&mut linker)?;
@@ -124,8 +116,6 @@ pub async fn execute_wasm(
 
     let envs = params.envs.iter().collect::<Vec<(&String, &String)>>();
 
-    // Fresh per-request host state (resource table + wasi contexts).
-
     let state = WASMState {
         cli_ctx: WasiCtx::builder()
             .stdout(OutputFile::new(stdout))
@@ -135,39 +125,37 @@ pub async fn execute_wasm(
             .build(),
         http_ctx: WasiHttpCtx::default(),
         table: ResourceTable::default(),
+        limits: StoreLimitsBuilder::new()
+            .memory_size(params.memory_bytes)
+            .trap_on_grow_failure(true)
+            .build(),
     };
 
     let mut store = Store::new(&engine, state);
+    store.limiter(|state| &mut state.limits);
+    // The ticker fires every second; +1 because the first tick can come right away.
+    store.set_epoch_deadline(params.timeout.as_secs() + 1);
+    store.epoch_deadline_trap();
 
-    // WARNING: Be careful, this code have to be deserialzed on a same version as it was compiled.
     let component = unsafe { Component::deserialize(&engine, binary)? };
 
-    // The guest must export `wasi:http/handler@0.3.0` (part of the
-    // `wasi:http/service` world): `handle: async func(request) -> result<response, error-code>`.
     let service = Service::instantiate_async(&mut store, &component, &linker).await?;
 
-    // Convert the incoming axum request into a wasi `Request` value.
-    // `axum::Error` doesn't know how to become a wasi `error-code`, so map it first.
     let (parts, body) = axum_req.into_parts();
     let body = body.map_err(|err| ErrorCode::InternalError(Some(err.to_string())));
-    // `io` is a future that drives streaming the request body into the guest;
-    // it must be polled concurrently alongside the `handle` call below.
     let (req, io) = WasiRequest::from_http(http::Request::from_parts(parts, body));
 
-    // `run_concurrent` gives us an `Accessor` for calling async component
-    // exports. We race the `handle` call against the body-streaming future so
-    // both make progress together.
-    let res = store
-        .run_concurrent(async |accessor| {
-            let (res, ()) = tokio::try_join!(handle_and_collect(accessor, &service, req), async {
-                io.await.context("failed to stream request body into guest")
-            })?;
-            anyhow::Ok(res)
-        })
-        .await??; // first `?` = wasmtime::Result, second `?` = our anyhow::Result
+    // The epoch deadline stops guests burning CPU; the timeout covers guests that only wait.
+    let run = store.run_concurrent(async |accessor| {
+        let (res, ()) = tokio::try_join!(handle_and_collect(accessor, &service, req), async {
+            io.await.context("failed to stream request body into guest")
+        })?;
+        anyhow::Ok(res)
+    });
+    let res = tokio::time::timeout(params.timeout, run)
+        .await
+        .context("function execution timed out")???;
 
-    // Turn the collected wasi response into a real axum response, or bail if
-    // the guest reported an http-level error.
     match res {
         Ok(response) => {
             let (parts, body) = response.into_parts();

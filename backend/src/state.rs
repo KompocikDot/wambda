@@ -3,7 +3,7 @@ use log::warn;
 use moka::future::Cache;
 use s3::{Bucket, BucketConfiguration, Region, creds::Credentials};
 use sea_orm::{Database, DatabaseConnection};
-use std::{env, sync::Arc};
+use std::{env, sync::Arc, time::Duration};
 use uuid::Uuid;
 use wasmtime::{Config, Engine};
 
@@ -89,6 +89,16 @@ impl AppState {
         wasmtime_config.epoch_interruption(true);
         
         let engine = Engine::new(&wasmtime_config)?;
+
+        // The epoch is global for the engine, so there is one ticker; every store sets its own deadline.
+        let weak = engine.weak();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(1));
+            while let Some(engine) = weak.upgrade() {
+                interval.tick().await;
+                engine.increment_epoch();
+            }
+        });
 
         return Ok(Self {
             db: pool,

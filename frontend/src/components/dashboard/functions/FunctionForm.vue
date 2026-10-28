@@ -18,8 +18,8 @@ const isNewForm = computed(() => route.params.uuid === 'new' && route.params.nam
 
 const formState = reactive<CreateUpdateFunctionInput>({
   name: '',
-  memoryLimit: 32,
-  timeout: 5000,
+  memoryLimit: 512,
+  timeout: 300,
   envs: [],
   wasm: undefined as unknown as File,
 })
@@ -143,7 +143,7 @@ onMounted(() => {
             v-model="formState.memoryLimit"
           />
         </UFormField>
-        <UFormField label="Timeout (ms)" class="w-1/2" name="timeout" required>
+        <UFormField label="Timeout (s)" class="w-1/2" name="timeout" required>
           <UInput
             class="w-full"
             type="number"

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result};
 use axum::{
@@ -38,21 +38,25 @@ async fn execute(
     info!("starting function execution {id}");
 
     let trigger_time = chrono::Utc::now();
-    let func: Option<i32> = function::Entity::find_by_uuid(id)
+    let func: Option<(i32, i32, i32)> = function::Entity::find_by_uuid(id)
         .join(JoinType::InnerJoin, function::Relation::User.def())
         .join(JoinType::InnerJoin, api_key::Relation::User.def().rev())
         .filter(api_key::Column::Key.eq(x_api_key))
         .select_only()
         .column(function::Column::Id)
+        .column(function::Column::MemoryLimit)
+        .column(function::Column::Timeout)
         .into_tuple()
         .one(&state.db)
         .await
         .context("could not create query to find api_key matching function")?;
 
-    let func_id = match func {
-        Some(id) => id,
+    let (func_id, memory_limit_mb, timeout_s) = match func {
+        Some(func) => func,
         None => return Err(AppError::NotFound),
     };
+    let memory_bytes = memory_limit_mb.max(1) as usize * 1024 * 1024;
+    let timeout = Duration::from_secs(timeout_s.max(1) as u64);
 
     info!("function with {id} exists");
 
@@ -119,7 +123,7 @@ async fn execute(
     let start_time = Utc::now();
 
     info!("starting function {id} execution");
-    let result = execute_wasm(
+    let resp = execute_wasm(
         state.wasmtime_engine.clone(),
         req,
         &binary,
@@ -128,9 +132,11 @@ async fn execute(
             stderr_filepath.clone(),
             workdir_filepath.clone(),
             HashMap::new(),
+            memory_bytes,
+            timeout,
         ),
     )
-    .await;
+    .await?;
 
     info!("finished execution of function {id}");
 
