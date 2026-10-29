@@ -1,7 +1,7 @@
 use axum::body::Bytes;
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use axum_typed_multipart::{FieldData, TryFromMultipart};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -49,9 +49,7 @@ fn decode_b64(s: &str) -> Option<String> {
     String::from_utf8(BASE64.decode(s).ok()?).ok()
 }
 
-// stored as "b64(key):b64(value),b64(key):b64(value)"; malformed pairs are skipped
 pub fn unstringify_envs(stringified_envs: &str) -> Vec<Env> {
-    // dencrypt these values somehow - maybe with user's api key?
     stringified_envs
         .split(',')
         .filter_map(|key_val| {
@@ -110,10 +108,14 @@ impl From<Vec<MainPageFunctionQuery>> for MainPageFunctionsResponse {
     }
 }
 
-#[derive(Validate, Deserialize)]
+#[derive(Validate, TryFromMultipart)]
+#[try_from_multipart(rename_all = "camelCase")]
 pub struct UpdateFunctionPayload {
     pub name: String,
     pub memory_limit: i32,
     pub timeout: i32,
     pub envs_stringified: String,
+
+    #[form_data(limit = "250MB")]
+    pub wasm: Option<FieldData<Bytes>>,
 }

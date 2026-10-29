@@ -37,7 +37,8 @@ pub struct MainPageFunctionQuery {
     #[sea_orm(
         from_expr = "Expr::col((super::run::Entity, super::run::Column::FinishTime))
             .sub(Expr::col((super::run::Entity, super::run::Column::TriggeredAt)))
-            .avg()"
+            .avg()
+            .cast_as(\"float8\")"
     )]
     pub avg_latency: Option<f64>,
 }

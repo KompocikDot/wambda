@@ -46,6 +46,8 @@ services:
       BACKEND_ADDR: 0.0.0.0:8000
       CORS_ORIGIN: http://localhost
       DEBUG: 0
+      # no TLS in front of nginx yet; set to 1 once it is served over https
+      COOKIE_SECURE: 0
     healthcheck:
       test: ["CMD", "/busybox", "wget", "-q", "--spider", "http://127.0.0.1:8000/api/health"]
       interval: 5s

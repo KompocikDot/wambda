@@ -7,7 +7,6 @@ use std::{env, sync::Arc, time::Duration};
 use uuid::Uuid;
 use wasmtime::{Config, Engine};
 
-/// Max total size (in bytes) of wasm binaries kept in `binaries_cache`.
 pub const BINARIES_CACHE_MAX_CAPACITY: u64 = 1024 * 1024 * 1024 * 4; // 4Gb
 
 #[derive(Clone)]
@@ -91,12 +90,11 @@ impl AppState {
         
         let engine = Engine::new(&wasmtime_config)?;
 
-        // The epoch is global for the engine, so there is one ticker; every store sets its own deadline.
+        // Using thread as tokio task would starve with all workers taken
         let weak = engine.weak();
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(1));
+        std::thread::spawn(move || {
             while let Some(engine) = weak.upgrade() {
-                interval.tick().await;
+                std::thread::sleep(Duration::from_millis(1));
                 engine.increment_epoch();
             }
         });
@@ -112,6 +110,10 @@ impl AppState {
                 .weigher(|_key, val: &Arc<Vec<u8>>| val.len() as u32)
                 .build(),
         });
+    }
+
+    pub async fn invalidate_binary(&self, id: Uuid) {
+        self.binaries_cache.invalidate(&id).await;
     }
 
     pub async fn get_binary(&self, id: Uuid) -> Result<Arc<Vec<u8>>> {

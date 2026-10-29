@@ -6,7 +6,7 @@ use axum::{
     extract::{DefaultBodyLimit, Path, State},
     http::StatusCode,
     middleware::from_extractor,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use axum_typed_multipart::TypedMultipart;
 use s3::serde_types::ObjectIdentifier;
@@ -24,7 +24,7 @@ use crate::{
     },
     schemas::functions::{
         CreateFunctionPayload, CreateFunctionResponse, MainPageFunctionsResponse,
-        SingleFunctionResponse,
+        SingleFunctionResponse, UpdateFunctionPayload,
     },
     state::AppState,
 };
@@ -36,10 +36,9 @@ pub fn functions_router() -> Router<Arc<AppState>> {
         .route("/", get(list_functions))
         .route(
             "/{function_id}",
-            get(get_function)
-                .delete(delete_function)
-                .patch(update_function),
+            patch(update_function).route_layer(DefaultBodyLimit::max(1024 * 1024 * 512)),
         )
+        .route("/{function_id}", get(get_function).delete(delete_function))
         .layer(from_extractor::<AuthUser>());
 }
 
@@ -187,37 +186,40 @@ async fn update_function(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
     Path(function_id): Path<Uuid>,
-    payload: TypedMultipart<CreateFunctionPayload>,
+    payload: TypedMultipart<UpdateFunctionPayload>,
 ) -> Result<StatusCode, AppError> {
-    let fn_to_update: Option<i32> = function::Entity::find_by_uuid(function_id)
-        .select_only()
-        .column(function::Column::Id)
-        .into_tuple()
+    let fn_to_update = Function::find_by_uuid(function_id)
+        .filter(function::COLUMN.owner_id.eq(user.id))
         .one(&state.db)
         .await
-        .context("could not get function to update")?;
+        .context("could not get function to update")?
+        .ok_or(AppError::NotFound)?;
 
-    let fn_owner_id = match fn_to_update {
-        Some(id) => id,
-        None => return Err(AppError::NotFound),
-    };
+    let mut update_function: function::ActiveModel = fn_to_update.into();
+    update_function.name = Set(payload.name.clone());
+    update_function.memory_limit = Set(payload.memory_limit);
+    update_function.timeout = Set(payload.timeout);
+    update_function.envs = Set(payload.envs_stringified.clone());
 
-    if fn_owner_id != user.id {
-        return Err(AppError::Unauthorized);
+    // compile and upload first, so a broken module leaves the function untouched
+    if let Some(wasm) = &payload.wasm {
+        let compiled = precopmile_wasm(state.wasmtime_engine.clone(), &wasm.contents).await?;
+
+        state
+            .blob_bucket
+            .put_object(function_id.to_string(), compiled.as_slice())
+            .await
+            .context("could not write wasm to bucket")?;
+
+        update_function.wasm_hash = Set(sha256::digest(wasm.contents.as_ref()));
     }
-
-    let update_function = function::ActiveModel {
-        name: Set(payload.name.clone()),
-        memory_limit: Set(payload.memory_limit),
-        timeout: Set(payload.timeout),
-        envs: Set(payload.envs_stringified.clone()),
-        ..Default::default()
-    };
 
     update_function
         .update(&state.db)
         .await
         .context("could not update function")?;
+
+    state.invalidate_binary(function_id).await;
 
     Ok(StatusCode::OK)
 }

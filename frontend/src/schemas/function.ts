@@ -14,8 +14,13 @@ export const CreateUpdateFunctionSchema = v.object({
 });
 
 
+export const UpdateFunctionSchema = v.object({
+  ...CreateUpdateFunctionSchema.entries,
+  wasm: v.optional(v.instance(File, 'Please upload a valid WebAssembly file')),
+});
 
 export type CreateUpdateFunctionInput = v.InferInput<typeof CreateUpdateFunctionSchema>;
 export type CreateUpdateFunctionOutput = v.InferOutput<typeof CreateUpdateFunctionSchema>;
+export type UpdateFunctionOutput = v.InferOutput<typeof UpdateFunctionSchema>;
 export type EnvVarInput = v.InferInput<typeof EnvVarSchema>;
 export type EnvVarOutput = v.InferOutput<typeof EnvVarSchema>;

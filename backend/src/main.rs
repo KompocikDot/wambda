@@ -61,7 +61,10 @@ async fn main() -> Result<()> {
         .await
         .context("could not migrate db")?;
 
-    let session_config = CookieSessionConfig::default().with_secure(!state.debug_mode);
+    let cookie_secure = env::var("COOKIE_SECURE")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(!state.debug_mode);
+    let session_config = CookieSessionConfig::default().with_secure(cookie_secure);
 
     let session_key = env::var("BACKEND_SESSION_COOKIE_SECRET")?;
     let secret = Key::from(&BASE64.decode(session_key)?);

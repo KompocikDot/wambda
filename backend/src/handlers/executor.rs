@@ -5,6 +5,7 @@ use axum::{
     Router,
     body::{Body, to_bytes},
     extract::{Path, Request, State},
+    http::header::{AUTHORIZATION, COOKIE},
     response::Response,
     routing::any,
 };
@@ -67,20 +68,7 @@ async fn execute(
     info!("function with {id} exists");
 
     let run_id = Uuid::now_v7();
-    let path = format!("/tmp/{id}");
 
-    if !fs::try_exists(&path)
-        .await
-        .context("could not check if tmp path exists")?
-    {
-        info!("creating temp dir for function {id}");
-        fs::create_dir(path)
-            .await
-            .context("could not create tmp directory for run")?;
-        info!("created temp dir for function {id}");
-    }
-
-    
     let run_dir = format!("/tmp/{id}/{run_id}");
     let workdir_filepath = format!("{run_dir}/data");
     let stdout_filepath = format!("{run_dir}:stdout");
@@ -106,9 +94,18 @@ async fn execute(
         .context("could not create wasi stderr")?;
     info!("created stderr for function {id}");
 
-    // Buffer the incoming request body once so we can both upload it as the
-    // run's payload and still pass the same content through to execute_wasm.
-    let (req_parts, req_body) = req.into_parts();
+    let (mut req_parts, req_body) = req.into_parts();
+
+    let guest_path = req_parts.uri.path().splitn(3, '/').nth(2).unwrap_or_default();
+    let guest_uri = match req_parts.uri.query() {
+        Some(query) => format!("/{guest_path}?{query}"),
+        None => format!("/{guest_path}"),
+    };
+    req_parts.uri = guest_uri.parse().context("could not build guest uri")?;
+
+    req_parts.headers.remove(AUTHORIZATION);
+    req_parts.headers.remove(COOKIE);
+
     let payload_bytes = to_bytes(req_body, usize::MAX)
         .await
         .context("could not read request payload")?;
@@ -147,7 +144,6 @@ async fn execute(
 
     info!("finished execution of function {id}");
 
-    // The working directory is only scratch space for the guest, also removed after a failure.
     fs::remove_dir_all(&run_dir)
         .await
         .context("could not remove run directory")?;
@@ -195,11 +191,8 @@ async fn execute(
 
     info!("removed function {id} tmp files");
 
-    // Everything is stored and cleaned up, so the execution error can be returned now.
     let resp = result?;
 
-    // Buffer the response body once so we can both upload it to the bucket
-    // and still return the same content back to the caller.
     let (parts, body) = resp.into_parts();
     let body_bytes = to_bytes(body, usize::MAX)
         .await

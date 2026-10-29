@@ -17,7 +17,7 @@ defineProps<{
     <div
       v-else
       v-for="stat in invocations"
-      class="flex justify-between not-last:border-b border-default h-80"
+      class="flex justify-between not-last:border-b border-default"
       :key="stat.name"
     >
       <div>{{ stat.name }}</div>

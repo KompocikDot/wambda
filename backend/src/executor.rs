@@ -133,9 +133,7 @@ pub async fn execute_wasm(
 
     let mut store = Store::new(&engine, state);
     store.limiter(|state| &mut state.limits);
-    // The ticker fires every second; +1 because the first tick can come right away.
-    store.set_epoch_deadline(params.timeout.as_secs() + 1);
-    store.epoch_deadline_trap();
+    store.epoch_deadline_async_yield_and_update(1);
 
     let component = unsafe { Component::deserialize(&engine, binary)? };
 
@@ -145,7 +143,6 @@ pub async fn execute_wasm(
     let body = body.map_err(|err| ErrorCode::InternalError(Some(err.to_string())));
     let (req, io) = WasiRequest::from_http(http::Request::from_parts(parts, body));
 
-    // The epoch deadline stops guests burning CPU; the timeout covers guests that only wait.
     let run = store.run_concurrent(async |accessor| {
         let (res, ()) = tokio::try_join!(handle_and_collect(accessor, &service, req), async {
             io.await.context("failed to stream request body into guest")

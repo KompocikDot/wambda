@@ -59,9 +59,9 @@ const columns: TableColumn<Function>[] = [
       }
 
       if (latency > 1000) {
-        return `${(latency / 1000).toFixed(1)}s`
+        return `${(latency / 1000).toFixed(2)}s`
       }
-      return `${latency}ms`
+      return `${Math.round(latency)}ms`
     },
   },
   {

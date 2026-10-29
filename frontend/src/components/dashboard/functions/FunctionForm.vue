@@ -2,16 +2,19 @@
 import { $api } from '@/composables/useAPI'
 import {
   CreateUpdateFunctionSchema,
+  UpdateFunctionSchema,
   type CreateUpdateFunctionInput,
-  type CreateUpdateFunctionOutput,
+  type UpdateFunctionOutput,
   type EnvVarInput,
   type EnvVarOutput,
 } from '@/schemas/function'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { computed, onMounted, reactive, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
+import { useToast } from '@nuxt/ui/composables/useToast'
 
 const route = useRoute()
+const toast = useToast()
 const form = useTemplateRef<HTMLFormElement>('form')
 const loading = defineModel<boolean>('loading', { default: false })
 const isNewForm = computed(() => route.params.uuid === 'new' && route.params.name === 'new')
@@ -65,13 +68,15 @@ const stringifyEnvVariables = (envs: EnvVarOutput[]): string => {
   return stringifiedEnvs
 }
 
-const onSubmit = async (event: FormSubmitEvent<CreateUpdateFunctionOutput>) => {
+const onSubmit = async (event: FormSubmitEvent<UpdateFunctionOutput>) => {
   const method = isNewForm.value ? 'POST' : 'PATCH'
   const endpoint = isNewForm.value ? '/functions' : `/functions/${route.params.uuid}`
 
   const payload = new FormData()
   payload.append('name', event.data.name)
-  payload.append('wasm', event.data.wasm)
+  if (event.data.wasm) {
+    payload.append('wasm', event.data.wasm)
+  }
   payload.append('memoryLimit', event.data.memoryLimit.toString())
   payload.append('timeout', event.data.timeout.toString())
   payload.append('envsStringified', stringifyEnvVariables(event.data.envs))
@@ -82,8 +87,13 @@ const onSubmit = async (event: FormSubmitEvent<CreateUpdateFunctionOutput>) => {
       method,
       body: payload,
     })
+    toast.add({
+      title: isNewForm.value ? 'Function created' : 'Changes saved',
+      color: 'success',
+    })
   } catch (e) {
     console.error(e)
+    toast.add({ title: 'Could not save the function', color: 'error' })
   }
 }
 
@@ -120,7 +130,7 @@ onMounted(() => {
     class="flex gap-x-4"
     :state="formState"
     @submit="onSubmit"
-    :schema="CreateUpdateFunctionSchema"
+    :schema="isNewForm ? CreateUpdateFunctionSchema : UpdateFunctionSchema"
   >
     <div class="flex flex-col w-2/3 gap-y-2">
       <UFormField label="Function name" class="w-full" name="name" required>
@@ -220,7 +230,12 @@ onMounted(() => {
       </div>
     </div>
     <div class="w-1/3">
-      <UFormField label="Module (.wasm)" name="wasm" required>
+      <UFormField
+        label="Module (.wasm)"
+        name="wasm"
+        :required="isNewForm"
+        :description="isNewForm ? undefined : 'Leave empty to keep the current module'"
+      >
         <UFileUpload
           accept="application/wasm"
           highlight
