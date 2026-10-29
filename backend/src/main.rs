@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::Router;
+use axum::routing::get;
 use axum::http::{HeaderValue, Method, header};
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
@@ -44,7 +45,7 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    dotenv::dotenv().context("could not load .env file")?;
+    dotenv::dotenv().ok();
 
     let state = Arc::new(
         AppState::new()
@@ -65,7 +66,14 @@ async fn main() -> Result<()> {
     let session_key = env::var("BACKEND_SESSION_COOKIE_SECRET")?;
     let secret = Key::from(&BASE64.decode(session_key)?);
 
+    let cors_origin = env::var("CORS_ORIGIN")
+        .unwrap_or_else(|_| "http://localhost:5173".to_owned())
+        .parse::<HeaderValue>()
+        .context("invalid CORS_ORIGIN")?;
+    let addr = env::var("BACKEND_ADDR").unwrap_or_else(|_| "127.0.0.1:8000".to_owned());
+
     let app = Router::new()
+        .route("/api/health", get(|| async { "ok" }))
         .nest("/api/auth", auth_router())
         .nest("/api/user", user_router())
         .nest("/api/functions", functions_router())
@@ -77,7 +85,7 @@ async fn main() -> Result<()> {
         .layer(
             CorsLayer::new()
                 .allow_credentials(true)
-                .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
+                .allow_origin(cors_origin)
                 .allow_methods([
                     Method::GET,
                     Method::POST,
@@ -88,7 +96,7 @@ async fn main() -> Result<()> {
                 .allow_headers([header::CONTENT_TYPE]),
         );
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:8000")
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .context("could not bind tcp listener")?;
 

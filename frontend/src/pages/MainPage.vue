@@ -21,7 +21,7 @@ const links: ButtonProps[] = [
       <UPageHero
         orientation="horizontal"
         title="Run WebAssembly functions in milliseconds."
-        description="Wambda is a serverless platform for WASM functions: sub-millisecond cold starts, sandboxed and safe by design. Upload a .wasm module and go live in seconds."
+        description="Wambda is a serverless platform for WASM functions: fast cold starts, sandboxed and safe by design. Upload a .wasm module and go live in seconds."
         :links="links"
       >
         <template #headline>
@@ -33,8 +33,8 @@ const links: ButtonProps[] = [
 
       <div class="flex">
         <UPageCard
-          title="Millisecond cold starts"
-          description="A lightweight Rust runtime boots each WASm module in under 2ms."
+          title="Fast cold starts"
+          description="A lightweight Rust runtime boots each WASM module in no time"
           icon="i-lucide-rabbit"
           class="rounded-none rounded-tl-lg"
         />

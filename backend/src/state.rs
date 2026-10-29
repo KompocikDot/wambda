@@ -34,7 +34,8 @@ impl AppState {
 
         let region = Region::Custom {
             region: "local".to_string(),
-            endpoint: "http://localhost:9000".to_string(),
+            endpoint: env::var("RUSTFS_ENDPOINT")
+                .unwrap_or_else(|_| "http://localhost:9000".to_string()),
         };
         let credentials = Credentials::new(
             Some(&env::var("RUSTFS_ACCESS_KEY").unwrap_or_default()), // FIXME: access-key; change later

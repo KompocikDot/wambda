@@ -22,6 +22,7 @@ use crate::{
     exctractors::ExtractApiKey,
     executor::{ExecutionParams, execute_wasm},
     models::{api_key, function, run},
+    schemas::functions::unstringify_envs,
     state::AppState,
 };
 
@@ -38,7 +39,7 @@ async fn execute(
     info!("starting function execution {id}");
 
     let trigger_time = chrono::Utc::now();
-    let func: Option<(i32, i32, i32)> = function::Entity::find_by_uuid(id)
+    let func: Option<(i32, i32, i32, String)> = function::Entity::find_by_uuid(id)
         .join(JoinType::InnerJoin, function::Relation::User.def())
         .join(JoinType::InnerJoin, api_key::Relation::User.def().rev())
         .filter(api_key::Column::Key.eq(x_api_key))
@@ -46,15 +47,20 @@ async fn execute(
         .column(function::Column::Id)
         .column(function::Column::MemoryLimit)
         .column(function::Column::Timeout)
+        .column(function::Column::Envs)
         .into_tuple()
         .one(&state.db)
         .await
         .context("could not create query to find api_key matching function")?;
 
-    let (func_id, memory_limit_mb, timeout_s) = match func {
+    let (func_id, memory_limit_mb, timeout_s, envs_stringified) = match func {
         Some(func) => func,
         None => return Err(AppError::NotFound),
     };
+    let envs: HashMap<String, String> = unstringify_envs(&envs_stringified)
+        .into_iter()
+        .map(|env| (env.key, env.value))
+        .collect();
     let memory_bytes = memory_limit_mb.max(1) as usize * 1024 * 1024;
     let timeout = Duration::from_secs(timeout_s.max(1) as u64);
 
@@ -132,7 +138,7 @@ async fn execute(
             stdout_filepath.clone(),
             stderr_filepath.clone(),
             workdir_filepath.clone(),
-            HashMap::new(),
+            envs,
             memory_bytes,
             timeout,
         ),

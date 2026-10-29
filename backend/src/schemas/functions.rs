@@ -1,4 +1,5 @@
 use axum::body::Bytes;
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use axum_typed_multipart::{FieldData, TryFromMultipart};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -44,23 +45,23 @@ pub struct SingleFunctionResponse {
     pub envs: Vec<Env>,
 }
 
-fn unstringify_envs(stringified_envs: String) -> Vec<Env> {
+fn decode_b64(s: &str) -> Option<String> {
+    String::from_utf8(BASE64.decode(s).ok()?).ok()
+}
+
+// stored as "b64(key):b64(value),b64(key):b64(value)"; malformed pairs are skipped
+pub fn unstringify_envs(stringified_envs: &str) -> Vec<Env> {
     // dencrypt these values somehow - maybe with user's api key?
-    //
-    let mut envs: Vec<Env> = Vec::new();
-    if stringified_envs.len() == 0 {
-        return envs;
-    }
-
-    for key_val in stringified_envs.split(",") {
-        let items: Vec<&str> = key_val.split(":").collect();
-        envs.push(Env {
-            key: items[0].to_owned(),
-            value: items[1].to_owned(),
-        });
-    }
-
-    return envs;
+    stringified_envs
+        .split(',')
+        .filter_map(|key_val| {
+            let (key, value) = key_val.split_once(':')?;
+            Some(Env {
+                key: decode_b64(key)?,
+                value: decode_b64(value)?,
+            })
+        })
+        .collect()
 }
 
 impl From<FunctionModel> for SingleFunctionResponse {
@@ -70,7 +71,7 @@ impl From<FunctionModel> for SingleFunctionResponse {
             name: value.name,
             memory_limit: value.memory_limit,
             timeout: value.timeout,
-            envs: unstringify_envs(value.envs),
+            envs: unstringify_envs(&value.envs),
         }
     }
 }

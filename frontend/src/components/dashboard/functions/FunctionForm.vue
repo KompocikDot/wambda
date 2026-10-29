@@ -50,12 +50,15 @@ const clearFirstField = () => {
   newEnvVariable.value = ''
 }
 
+const toBase64 = (text: string): string =>
+  btoa(String.fromCharCode(...new TextEncoder().encode(text)))
+
 const stringifyEnvVariables = (envs: EnvVarOutput[]): string => {
   let stringifiedEnvs = ''
   for (const env of envs) {
-    stringifiedEnvs += atob(env.key)
+    stringifiedEnvs += toBase64(env.key)
     stringifiedEnvs += ':'
-    stringifiedEnvs += atob(env.value)
+    stringifiedEnvs += toBase64(env.value)
     stringifiedEnvs += ','
   }
 
