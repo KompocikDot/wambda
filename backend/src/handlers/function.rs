@@ -195,31 +195,32 @@ async fn update_function(
         .context("could not get function to update")?
         .ok_or(AppError::NotFound)?;
 
-    let mut update_function: function::ActiveModel = fn_to_update.into();
+    let mut update_function: function::ActiveModel = fn_to_update.clone().into();
     update_function.name = Set(payload.name.clone());
     update_function.memory_limit = Set(payload.memory_limit);
     update_function.timeout = Set(payload.timeout);
     update_function.envs = Set(payload.envs_stringified.clone());
 
-    // compile and upload first, so a broken module leaves the function untouched
     if let Some(wasm) = &payload.wasm {
-        let compiled = precopmile_wasm(state.wasmtime_engine.clone(), &wasm.contents).await?;
+        let wasm_hash = sha256::digest(wasm.contents.as_ref());
+        if fn_to_update.wasm_hash != wasm_hash {
+            let compiled = precopmile_wasm(state.wasmtime_engine.clone(), &wasm.contents).await?;
 
-        state
-            .blob_bucket
-            .put_object(function_id.to_string(), compiled.as_slice())
-            .await
-            .context("could not write wasm to bucket")?;
+            state
+                .blob_bucket
+                .put_object(function_id.to_string(), compiled.as_slice())
+                .await
+                .context("could not write wasm to bucket")?;
 
-        update_function.wasm_hash = Set(sha256::digest(wasm.contents.as_ref()));
+            update_function.wasm_hash = Set(wasm_hash);
+            state.invalidate_binary(function_id).await;
+        }
     }
 
     update_function
         .update(&state.db)
         .await
         .context("could not update function")?;
-
-    state.invalidate_binary(function_id).await;
 
     Ok(StatusCode::OK)
 }

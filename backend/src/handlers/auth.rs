@@ -54,7 +54,7 @@ async fn register_user(
         .context("Failed to create hash")?
         .to_string();
 
-    
+
     let new_user = user::ActiveModel {
         full_name: Set(payload.full_name),
         email: Set(payload.email),
@@ -65,7 +65,7 @@ async fn register_user(
     let txn = state.db.begin().await.context("could not start transaction")?;
 
     let user = new_user
-        .insert(&state.db)
+        .insert(&txn)
         .await
         .context("could not insert user into the db")?;
 
@@ -76,7 +76,7 @@ async fn register_user(
     };
 
     new_api_key
-        .insert(&state.db)
+        .insert(&txn)
         .await
         .context("could not insert api key into the db")?;
 

@@ -37,10 +37,10 @@ impl AppState {
                 .unwrap_or_else(|_| "http://localhost:9000".to_string()),
         };
         let credentials = Credentials::new(
-            Some(&env::var("RUSTFS_ACCESS_KEY").unwrap_or_default()), // FIXME: access-key; change later
-            Some(&env::var("RUSTFS_SECRET_KEY").unwrap_or_default()), // FIXME: secret-key; change later
-            None,                                                     // FIXME: set security_token
-            None, // FIXME: session token NOTE: Should it be set?
+            Some(&env::var("RUSTFS_ACCESS_KEY").unwrap_or_default()),
+            Some(&env::var("RUSTFS_SECRET_KEY").unwrap_or_default()),
+            None,
+            None,
             None,
         )?;
 
