@@ -41,7 +41,7 @@ erDiagram
         VARCHAR trigger "enum: http, cron"
         BIGINT memory_limit "Set as Mb"
         BIGINT timeout "Set as milliseconds"
-        TEXT ends "Saved as key=value (encrypted)"
+        TEXT envs "Saved as key=value"
         SERIAL owner_id FK
     }
 

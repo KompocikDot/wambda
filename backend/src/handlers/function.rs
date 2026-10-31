@@ -124,6 +124,37 @@ async fn list_functions(
     Ok((StatusCode::OK, Json(functions.into())))
 }
 
+pub async fn purge_function_objects(
+    state: &AppState,
+    function_uuid: Uuid,
+    run_uuids: &[Uuid],
+) -> Result<(), AppError> {
+    let keys: Vec<ObjectIdentifier> = run_uuids
+        .iter()
+        .flat_map(|run_id| {
+            ["stdout", "stderr", "payload", "response"]
+                .map(|typ| ObjectIdentifier::new(format!("/{function_uuid}/{run_id}:{typ}")))
+        })
+        .collect();
+
+    for chunk in keys.chunks(1000) {
+        state
+            .io_executions_bucket
+            .delete_objects(chunk.to_vec())
+            .await
+            .context("could not delete io-execution objects")?;
+    }
+
+    state
+        .blob_bucket
+        .delete_object(function_uuid.to_string())
+        .await
+        .context("could not delete function binary from s3")?;
+    state.invalidate_binary(function_uuid).await;
+
+    Ok(())
+}
+
 async fn delete_function(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
@@ -136,45 +167,23 @@ async fn delete_function(
         .await
         .context("could not fetch function to delete it")?;
 
-    let function_id = match function_instance {
+    let function_db_id = match function_instance {
         Some(func) => func.id,
         None => return Err(AppError::NotFound),
     };
 
-    let run_ids: Vec<i32> = run::Entity::find()
-        .filter(run::COLUMN.function_id.eq(function_id))
+    let run_uuids: Vec<Uuid> = run::Entity::find()
+        .filter(run::COLUMN.function_id.eq(function_db_id))
         .select_only()
-        .column(run::Column::Id)
+        .column(run::Column::Uuid)
         .into_tuple()
         .all(&state.db)
         .await
         .context("could not retrieve run ids to later remove them")?;
 
-    for chunk in run_ids.chunks(500) {
-        let delete_objects = chunk
-            .iter()
-            .flat_map(|id| {
-                [
-                    ObjectIdentifier::new(format!("/{function_id}/{id}:stdout")),
-                    ObjectIdentifier::new(format!("/{function_id}/{id}:stderr")),
-                ]
-            })
-            .collect::<Vec<ObjectIdentifier>>();
+    purge_function_objects(&state, function_id, &run_uuids).await?;
 
-        state
-            .io_executions_bucket
-            .delete_objects(delete_objects)
-            .await
-            .context("could not delete io-execution buckets")?;
-    }
-
-    state
-        .blob_bucket
-        .delete_object(function_id.to_string())
-        .await
-        .context("could not delete function binary from s3")?;
-
-    Function::delete_by_id(function_id)
+    Function::delete_by_id(function_db_id)
         .exec(&state.db)
         .await
         .context("could not delete function from db")?;
