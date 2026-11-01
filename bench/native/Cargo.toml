@@ -1,0 +1,11 @@
+[package]
+name = "native"
+version = "0.1.0"
+edition = "2024"
+[dependencies]
+core-handler = { path = "../core" }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros"] }
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+bytes = "1"
