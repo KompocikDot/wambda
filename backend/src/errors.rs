@@ -18,7 +18,9 @@ pub enum AppError {
     Unauthorized,
     Internal(anyhow::Error),
     InvalidRequest(Value),
-    NotFound
+    NotFound,
+    GuestFailed(anyhow::Error), // guest trapped, hit a resource limit or returned an error
+    GuestTimeout,
 }
 
 impl IntoResponse for AppError {
@@ -37,6 +39,19 @@ impl IntoResponse for AppError {
                 StatusCode::BAD_REQUEST,
                 "Invalid request data".to_string(),
                 Some(validation_err),
+            ),
+            AppError::GuestFailed(inner_err) => {
+                tracing::warn!("Function execution failed: {:?}", inner_err);
+                (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "Function execution failed".to_string(),
+                    None,
+                )
+            }
+            AppError::GuestTimeout => (
+                StatusCode::REQUEST_TIMEOUT,
+                "Function execution timed out".to_string(),
+                None,
             ),
             AppError::NotFound => (
                 StatusCode::NOT_FOUND,
@@ -63,5 +78,11 @@ impl IntoResponse for AppError {
 impl From<anyhow::Error> for AppError {
     fn from(err: anyhow::Error) -> Self {
         AppError::Internal(err)
+    }
+}
+
+impl From<wasmtime::Error> for AppError {
+    fn from(err: wasmtime::Error) -> Self {
+        AppError::Internal(err.into())
     }
 }

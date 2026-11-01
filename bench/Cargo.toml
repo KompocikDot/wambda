@@ -1,0 +1,8 @@
+[workspace]
+members = ["core", "native", "guest", "attacks"]
+default-members = ["core", "native", "guest"]
+resolver = "3"
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

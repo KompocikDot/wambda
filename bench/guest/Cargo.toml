@@ -1,0 +1,12 @@
+[package]
+name = "guest"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+core-handler = { path = "../core" }
+wasip3 = { version = "0.10", features = ["http-compat"] }
+http = "1"

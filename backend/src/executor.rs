@@ -17,6 +17,9 @@ use wasmtime_wasi_http::p3::bindings::http::types::ErrorCode;
 use wasmtime_wasi_http::p3::{Request as WasiRequest, WasiHttpView};
 use wasmtime_wasi_http::{WasiHttpCtx, p3::WasiHttpCtxView};
 
+use crate::errors::AppError;
+use crate::security_hooks::HttpSecurityHook;
+
 pub struct ExecutionParams {
     stdout_path: String,
     stderr_path: String,
@@ -52,12 +55,13 @@ struct WASMState {
     http_ctx: WasiHttpCtx,
     cli_ctx: WasiCtx,
     limits: StoreLimits,
+    hooks: HttpSecurityHook,
 }
 
 impl WasiHttpView for WASMState {
     fn http(&mut self) -> WasiHttpCtxView<'_> {
         WasiHttpCtxView {
-            hooks: Default::default(),
+            hooks: &mut self.hooks,
             table: &mut self.table,
             ctx: &mut self.http_ctx,
         }
@@ -98,7 +102,7 @@ pub async fn execute_wasm(
     axum_req: Request,
     binary: &[u8],
     params: ExecutionParams,
-) -> Result<Response> {
+) -> Result<Response, AppError> {
     let mut linker = Linker::<WASMState>::new(&engine);
     wasmtime_wasi::p2::add_to_linker_async(&mut linker)?;
     wasmtime_wasi::p3::add_to_linker(&mut linker)?;
@@ -121,7 +125,12 @@ pub async fn execute_wasm(
             .stdout(OutputFile::new(stdout))
             .stderr(OutputFile::new(stderr))
             .envs(envs.as_ref())
-            .preopened_dir(params.workdir_path, "/tmp", DirPerms::all(), FilePerms::all())?
+            .preopened_dir(
+                params.workdir_path,
+                "/tmp",
+                DirPerms::all(),
+                FilePerms::all(),
+            )?
             .build(),
         http_ctx: WasiHttpCtx::default(),
         table: ResourceTable::default(),
@@ -129,6 +138,7 @@ pub async fn execute_wasm(
             .memory_size(params.memory_bytes)
             .trap_on_grow_failure(true)
             .build(),
+        hooks: HttpSecurityHook,
     };
 
     let mut store = Store::new(&engine, state);
@@ -149,15 +159,20 @@ pub async fn execute_wasm(
         })?;
         anyhow::Ok(res)
     });
-    let res = tokio::time::timeout(params.timeout, run)
-        .await
-        .context("function execution timed out")???;
+    let res = match tokio::time::timeout(params.timeout, run).await {
+        Err(_) => return Err(AppError::GuestTimeout),
+        Ok(Err(e)) => return Err(AppError::GuestFailed(e.into())),
+        Ok(Ok(Err(e))) => return Err(AppError::GuestFailed(e)),
+        Ok(Ok(Ok(res))) => res,
+    };
 
     match res {
         Ok(response) => {
             let (parts, body) = response.into_parts();
             Ok(Response::from_parts(parts, AxumBody::from(body)))
         }
-        Err(code) => anyhow::bail!("guest handler returned an http error: {code:?}"),
+        Err(code) => Err(AppError::GuestFailed(anyhow::anyhow!(
+            "guest handler returned an http error: {code:?}"
+        ))),
     }
 }

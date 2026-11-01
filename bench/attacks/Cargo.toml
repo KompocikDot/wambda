@@ -1,0 +1,22 @@
+[package]
+name = "attacks"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasip3 = { version = "0.10", features = ["http-compat"] }
+http = "1"
+bytes = "1"
+http-body-util = "0.1"
+
+[features]
+attack-memory-bomb = []
+attack-trap-div-zero = []
+attack-infinite-loop = []
+attack-fs-escape = []
+attack-env-leak = []
+attack-header-leak = []
+attack-ssrf = []

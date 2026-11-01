@@ -14,6 +14,7 @@ mod handlers;
 mod models;
 mod schemas;
 mod state;
+mod security_hooks;
 
 use tower_http::cors::CorsLayer;
 use tower_sessions_cookie_store::{CookieSessionConfig, CookieSessionManagerLayer, Key};
