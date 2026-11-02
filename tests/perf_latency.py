@@ -5,7 +5,9 @@
 #   A - native server in a Docker container (alpine)
 #   B - Wasm module in plain `wasmtime serve` (runtime only, no platform)
 #   C - Wasm module through the Wambda platform (auth, DB, S3 logging, nginx)
-# Usage: docker build -t wambda-bench-native bench && uv run tests/perf_latency.py
+# Local: docker build -t wambda-bench-native bench && uv run tests/perf_latency.py
+# From another machine (only warm tests, cold start needs local process control):
+#   TARGET_HOST=<address> uv run tests/perf_latency.py   (tests/sut_targets.py must be running on that machine)
 import statistics
 import subprocess
 import time
@@ -14,17 +16,29 @@ import requests
 from rich.console import Console
 from rich.table import Table
 
-from perf_common import BASE, HELLO_WASM, login, remove_containers, start_container, start_wasmtime, stop_process, wait_until_ready
+from perf_common import (
+    BASE,
+    HELLO_WASM,
+    REMOTE,
+    TARGET_HOST,
+    login,
+    remove_containers,
+    start_container,
+    start_wasmtime,
+    stop_process,
+    wait_until_ready,
+)
 
 COMPOSE = ["docker", "compose", "-f", "compose.prod.yml"]
 
 COLD_RUNS = 20
 RESTART_RUNS = 5
+DEPLOY_RUNS = 10
 WARM_REQUESTS = 300
 WARMUP_REQUESTS = 30
 
-URL_A = "http://127.0.0.1:18080/hello"
-URL_B = "http://127.0.0.1:18081/hello"
+URL_A = f"http://{TARGET_HOST}:18080/hello"
+URL_B = f"http://{TARGET_HOST}:18081/hello"
 
 
 def percentile(values, p):
@@ -73,11 +87,13 @@ def cold_docker():
 
 
 def warm_docker():
-    start_container("perf-native", 18080)
-    wait_until_ready(URL_A)
+    if not REMOTE:
+        start_container("perf-native", 18080)
+        wait_until_ready(URL_A)
     http = requests.Session()
     times = warm_latency(lambda: http.get(URL_A))
-    remove_containers("perf-native")
+    if not REMOTE:
+        remove_containers("perf-native")
     return times
 
 
@@ -94,11 +110,13 @@ def cold_wasmtime():
 
 
 def warm_wasmtime():
-    process = start_wasmtime(18081)
-    wait_until_ready(URL_B)
+    if not REMOTE:
+        process = start_wasmtime(18081)
+        wait_until_ready(URL_B)
     http = requests.Session()
     times = warm_latency(lambda: http.get(URL_B))
-    stop_process(process)
+    if not REMOTE:
+        stop_process(process)
     return times
 
 
@@ -122,17 +140,6 @@ def call_wambda():
     return requests.get(execute_url, headers=headers)
 
 
-def cold_wambda_cache_miss():
-    times = []
-    for _ in range(COLD_RUNS):
-        # editing the function (without a new module) drops the cached binary
-        session.patch(f"{BASE}/functions/{function_id}", data=data)
-        start = time.time()
-        call_wambda()
-        times.append(time.time() - start)
-    return times
-
-
 def cold_wambda_restart():
     times = []
     for _ in range(RESTART_RUNS):
@@ -150,17 +157,49 @@ def warm_wambda():
     return warm_latency(lambda: http.get(execute_url, headers=headers))
 
 
+def warm_health():
+    http = requests.Session()
+    return warm_latency(lambda: http.get(f"{BASE}/health"))
+
+
+def deploy_wambda():
+    # upload + AOT compilation + S3 + DB; each run is a new function, removed afterwards
+    times = []
+    for i in range(DEPLOY_RUNS):
+        start = time.time()
+        uuid = session.post(f"{BASE}/functions", data={**data, "name": f"perf-deploy-{i}"},
+                            files={"wasm": open(HELLO_WASM, "rb")}).json()["uuid"]
+        times.append(time.time() - start)
+        session.delete(f"{BASE}/functions/{uuid}")
+    return times
+
+
+def first_call_after_deploy():
+    times = []
+    for i in range(DEPLOY_RUNS):
+        uuid = session.post(f"{BASE}/functions", data={**data, "name": f"perf-first-{i}"},
+                            files={"wasm": open(HELLO_WASM, "rb")}).json()["uuid"]
+        start = time.time()
+        requests.get(f"{BASE}/execute/{uuid}/hello", headers=headers)
+        times.append(time.time() - start)
+        session.delete(f"{BASE}/functions/{uuid}")
+    return times
+
+
 # cold = time to the first correct response, warm = one keep-alive connection, sequential
-measure("cold A docker run -> first 200", cold_docker)
-measure("cold B wasmtime serve -> first 200", cold_wasmtime)
-measure("cold C wambda, binary not cached", cold_wambda_cache_miss)
-measure("cold C wambda, after backend restart", cold_wambda_restart)
+if not REMOTE:
+    measure("cold A docker run -> first 200", cold_docker)
+    measure("cold B wasmtime serve -> first 200", cold_wasmtime)
+    measure("cold C wambda, after backend restart", cold_wambda_restart)
+measure("C wambda deploy (upload + compile + S3 + DB)", deploy_wambda)
+measure("cold C wambda, binary not cached (1st call after deploy)", first_call_after_deploy)
 
 measure("warm A docker", warm_docker)
 measure("warm B wasmtime serve", warm_wasmtime)
 measure("warm C wambda (via nginx)", warm_wambda)
+measure("warm C nginx + Axum only (/api/health)", warm_health)
 
-table = Table(title="Latency of the hello handler (ms)")
+table = Table(title=f"Latency of the hello handler (ms), target {TARGET_HOST}")
 table.add_column("Test")
 for column in ["n", "median", "p95", "p99", "min", "max"]:
     table.add_column(column, justify="right")

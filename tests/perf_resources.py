@@ -5,7 +5,6 @@
 # Usage: docker build -t wambda-bench-native bench && uv run tests/perf_resources.py
 import os
 import subprocess
-import threading
 import time
 
 import requests
@@ -13,8 +12,11 @@ from perf_common import (
     BASE,
     HELLO_WASM,
     IMAGE,
+    closed_loop,
     deploy,
+    docker_sum,
     login,
+    process_stats,
     remove_containers,
     start_container,
     start_wasmtime,
@@ -31,56 +33,6 @@ DENSITY = [1, 10, 50]
 LOAD_SECONDS = 15
 LOAD_WORKERS = 8
 LOAD_PATH = "fib/27"
-
-
-def to_mib(text):
-    for unit, factor in [
-        ("GiB", 1024),
-        ("MiB", 1),
-        ("KiB", 1 / 1024),
-        ("B", 1 / 1024 / 1024),
-    ]:
-        if text.endswith(unit):
-            return float(text[: -len(unit)]) * factor
-    raise ValueError(text)
-
-
-def docker_stats():
-    """name -> (cpu %, memory MiB) for every running container."""
-    out = subprocess.run(
-        [
-            "docker",
-            "stats",
-            "--no-stream",
-            "--format",
-            "{{.Name}} {{.CPUPerc}} {{.MemUsage}}",
-        ],
-        capture_output=True,
-        text=True,
-    ).stdout
-    stats = {}
-    for line in out.splitlines():
-        name, cpu, mem = line.split()[:3]
-        stats[name] = (float(cpu.rstrip("%")), to_mib(mem))
-    return stats
-
-
-def docker_sum(names):
-    stats = docker_stats()
-    return sum(stats[n][0] for n in names if n in stats), sum(
-        stats[n][1] for n in names if n in stats
-    )
-
-
-def process_stats(pids):
-    cpu, mem = 0, 0
-    for pid in pids:
-        out = subprocess.run(
-            ["ps", "-o", "%cpu=,rss=", "-p", str(pid)], capture_output=True, text=True
-        ).stdout.split()
-        cpu += float(out[0])
-        mem += int(out[1]) / 1024
-    return cpu, mem
 
 
 session, headers, _ = login()
@@ -152,27 +104,8 @@ add(IDLE, "C whole stack (+nginx, db, s3)", f"{docker_sum(STACK)[1]:.1f}")
 # ---------- load: CPU, memory, throughput ----------
 def run_load(label, url, request_headers, sample):
     print(f"load: {label}...")
-    deadline = time.time() + LOAD_SECONDS
-    counts = [0] * LOAD_WORKERS
-
-    def worker(i):
-        http = requests.Session()
-        while time.time() < deadline:
-            if http.get(url, headers=request_headers).status_code == 200:
-                counts[i] += 1
-
-    threads = [threading.Thread(target=worker, args=(i,)) for i in range(LOAD_WORKERS)]
-    for thread in threads:
-        thread.start()
-    samples = []
-    while time.time() < deadline:
-        samples.append(sample())
-    for thread in threads:
-        thread.join()
-
-    cpu = sum(s[0] for s in samples) / len(samples)
-    mem = max(s[1] for s in samples)
-    add(LOAD, label, f"{sum(counts) / LOAD_SECONDS:.1f}", f"{cpu:.1f}", f"{mem:.1f}")
+    rate, cpu, mem = closed_loop(url, request_headers, LOAD_SECONDS, LOAD_WORKERS, sample)
+    add(LOAD, label, f"{rate:.1f}", f"{cpu:.1f}", f"{mem:.1f}")
 
 
 run_load(

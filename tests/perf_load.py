@@ -2,7 +2,9 @@
 # dependencies = ["requests", "rich"]
 # ///
 # Prepares targets A (Docker), B (wasmtime serve), C (Wambda) and runs tests/perf_load.ts (k6) against each.
-# Usage: docker build -t wambda-bench-native bench && uv run tests/perf_load.py
+# Local: docker build -t wambda-bench-native bench && uv run tests/perf_load.py
+# Two machines: run tests/sut_targets.py and the compose stack on the machine under test, then on this one:
+#   TARGET_HOST=<address> DURATION=30s uv run tests/perf_load.py
 import os
 import re
 import subprocess
@@ -10,6 +12,8 @@ import subprocess
 import requests
 from perf_common import (
     BASE,
+    REMOTE,
+    TARGET_HOST,
     deploy,
     login,
     remove_containers,
@@ -24,20 +28,22 @@ from rich.table import Table
 K6_IMAGE = "grafana/k6"
 
 # k6 runs in Docker and reaches the host through host.docker.internal (--add-host makes it work on Linux too)
-HOST = "host.docker.internal"
+HOST = TARGET_HOST if REMOTE else "host.docker.internal"
 
-DURATION = "10s"
+DURATION = os.environ.get("DURATION", "10s")
+WARMUP = "5s"
 WORKLOADS = [
     ("hello", [50, 200, 500]),
     ("fib/27", [50, 100, 200]),
 ]
+# platform without Wasm execution: nginx + Axum only
+HEALTH_WORKLOADS = [("health", [200, 500])]
 
 
 rows = []
 
 
-def run_k6(label, base_url, path, rate, api_key=""):
-    print(f"running: {label} /{path} {rate}/s...")
+def k6(base_url, path, rate, duration, api_key=""):
     command = [
         "docker",
         "run",
@@ -53,7 +59,7 @@ def run_k6(label, base_url, path, rate, api_key=""):
         "-e",
         f"RATE={rate}",
         "-e",
-        f"DURATION={DURATION}",
+        f"DURATION={duration}",
         "-e",
         f"API_KEY={api_key}",
         K6_IMAGE,
@@ -62,7 +68,12 @@ def run_k6(label, base_url, path, rate, api_key=""):
         "/tests/perf_load.ts",
     ]
     out = subprocess.run(command, capture_output=True, text=True)
-    text = out.stdout + out.stderr
+    return out.stdout + out.stderr
+
+
+def run_k6(label, base_url, path, rate, api_key=""):
+    print(f"running: {label} /{path} {rate}/s...")
+    text = k6(base_url, path, rate, DURATION, api_key)
 
     latency = re.search(
         r"http_req_duration.*?med=(\S+)\s+p\(95\)=(\S+)\s+p\(99\)=(\S+)\s+max=(\S+)",
@@ -91,8 +102,10 @@ def run_k6(label, base_url, path, rate, api_key=""):
     )
 
 
-def run_target(label, base_url, api_key=""):
-    for path, rates in WORKLOADS:
+def run_target(label, base_url, workloads, api_key=""):
+    print(f"warm-up: {label}...")
+    k6(base_url, workloads[0][0], 50, WARMUP, api_key)
+    for path, rates in workloads:
         for rate in rates:
             run_k6(label, base_url, path, rate, api_key)
 
@@ -100,22 +113,26 @@ def run_target(label, base_url, api_key=""):
 session, headers, api_key = login()
 function_id = deploy(session, "perf-load")
 
-start_container("perf-native", 18080)
-process = start_wasmtime(18081, host="0.0.0.0")
-wait_until_ready("http://127.0.0.1:18080/hello")
-wait_until_ready("http://127.0.0.1:18081/hello")
+process = None
+if not REMOTE:
+    start_container("perf-native", 18080)
+    process = start_wasmtime(18081, host="0.0.0.0")
+wait_until_ready(f"http://{TARGET_HOST}:18080/hello")
+wait_until_ready(f"http://{TARGET_HOST}:18081/hello")
 requests.get(f"{BASE}/execute/{function_id}/hello", headers=headers)
 
 try:
-    run_target("A docker", f"http://{HOST}:18080")
-    run_target("B wasmtime serve", f"http://{HOST}:18081")
-    run_target("C wambda (via nginx)", f"http://{HOST}/api/execute/{function_id}", api_key)
+    run_target("A docker", f"http://{HOST}:18080", WORKLOADS)
+    run_target("B wasmtime serve", f"http://{HOST}:18081", WORKLOADS)
+    run_target("C wambda (via nginx)", f"http://{HOST}/api/execute/{function_id}", WORKLOADS, api_key)
+    run_target("C nginx + Axum only", f"http://{HOST}/api", HEALTH_WORKLOADS)
 finally:
-    stop_process(process)
-    remove_containers("perf-native")
+    if process:
+        stop_process(process)
+        remove_containers("perf-native")
     session.delete(f"{BASE}/functions/{function_id}")
 
-table = Table(title=f"k6 constant request rate, {DURATION} per run")
+table = Table(title=f"k6 constant request rate, {DURATION} per run, target {TARGET_HOST}")
 for column in ["Target", "Path", "Rate"]:
     table.add_column(column)
 for column in ["Done req/s", "med", "p95", "p99", "max", "Failed", "Dropped"]:
