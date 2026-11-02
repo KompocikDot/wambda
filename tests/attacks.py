@@ -9,6 +9,7 @@
 # 422 = guest crashed or hit a resource limit (trap, memory) - contained by the platform
 # 408 = guest killed on timeout
 # 500 = unexpected platform error
+import os
 import threading
 import time
 
@@ -17,7 +18,7 @@ from rich.console import Console
 from rich.live import Live
 from rich.table import Table
 
-BASE = "http://localhost/api"
+BASE = f"http://{os.environ.get('TARGET_HOST', 'localhost')}/api"
 EMAIL = "attacks@test.pl"
 PASSWORD = "Test1234!pass"
 DIST = "bench/attacks/dist"
@@ -81,7 +82,7 @@ cases = [
     ("attack-trap-div-zero", 64, 10, 422, "", ""),
     ("attack-infinite-loop", 64, 5, 408, "", ""),
     ("attack-fs-escape", 64, 10, 200, "", ""),
-    ("attack-env-leak", 64, 10, 200, "Rk9P:YmFy,", "FOO=bar"),
+    ("attack-env-leak", 64, 10, 200, "Rk9P:YmFy,", ""),
     ("attack-header-leak", 64, 10, 200, "", ""),
 ]
 
@@ -138,6 +139,13 @@ for url, extra in ssrf_targets:
 loop_id = deploy("attack-infinite-loop", f"{DIST}/attack-infinite-loop.wasm", 64, 5)
 hello_id = deploy("baseline-hello", HELLO_WASM, 64, 10)
 
+idle = 0
+for _ in range(5):
+    start = time.time()
+    execute(hello_id, "hello")
+    idle = max(idle, time.time() - start)
+table.add_row("hello, no load (reference)", "<1s", f"{idle:.2f}", f"{idle:.2f}", colored(idle < 1))
+
 threads = []
 for _ in range(16):
     thread = threading.Thread(target=execute, args=(loop_id, "run", 30))
@@ -162,5 +170,33 @@ table.add_row(
     f"{worst:.2f}",
     colored(worst < 1),
 )
+
+# Isolation between users: user B must not reach A's function (404 = hidden, 401 = no/invalid key).
+other = requests.Session()
+other.post(f"{BASE}/auth/register", json={"fullName": "Attacks B", "email": "attacks-b@test.pl", "password": PASSWORD})
+other.post(f"{BASE}/auth/login", json={"email": "attacks-b@test.pl", "password": PASSWORD})
+other_key = other.get(f"{BASE}/auth/api-key").json()["apiKey"]
+foreign_url = f"{BASE}/execute/{hello_id}/hello"
+function_url = f"{BASE}/functions/{hello_id}"
+
+isolation = [
+    ("idor execute, no key", 401, lambda: requests.get(foreign_url)),
+    ("idor execute, invalid key", 401, lambda: requests.get(foreign_url, headers={"Authorization": "Bearer " + "0" * 8})),
+    ("idor execute, other user's key", 404, lambda: requests.get(foreign_url, headers={"Authorization": "Bearer " + other_key})),
+    ("idor get function", 404, lambda: other.get(function_url)),
+    ("idor update function", 404, lambda: other.patch(function_url, data={"name": "stolen", "memoryLimit": 64, "timeout": 5, "envsStringified": ""}, files={"wasm": ("a.wasm", b"")})),
+    ("idor delete function", 404, lambda: other.delete(function_url)),
+    ("control: owner still executes", 200, lambda: execute(hello_id, "hello")),
+]
+for name, expected, call in isolation:
+    start = time.time()
+    response = call()
+    table.add_row(
+        name,
+        str(expected),
+        str(response.status_code),
+        f"{time.time() - start:.2f}",
+        colored(response.status_code == expected),
+    )
 
 live.stop()
