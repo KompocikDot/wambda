@@ -1,0 +1,20 @@
+# Variant B: the Wasm handler served by plain `wasmtime serve`, no platform around it.
+# Build the component first: cargo build --release --target wasm32-wasip2 -p guest
+# Build the image from this directory: docker build -f Dockerfile.wasmtime -t wambda-bench-wasmtime .
+FROM debian:13-slim AS download
+ARG WASMTIME_VERSION=47.0.3
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl xz-utils
+RUN arch=$(uname -m) \
+    && curl -fsSL "https://github.com/bytecodealliance/wasmtime/releases/download/v${WASMTIME_VERSION}/wasmtime-v${WASMTIME_VERSION}-${arch}-linux.tar.xz" \
+       | tar -xJ -C /tmp \
+    && mv /tmp/wasmtime-v${WASMTIME_VERSION}-${arch}-linux/wasmtime /wasmtime
+
+FROM debian:13-slim
+COPY --from=download /wasmtime /usr/local/bin/wasmtime
+COPY target/wasm32-wasip2/release/guest.wasm /guest.wasm
+# compiled ahead of time at build, like the platform does at deploy, so a start does not include compilation
+RUN wasmtime compile -Sp3 -Wcomponent-model-async /guest.wasm -o /guest.cwasm
+ENV HOME=/tmp
+EXPOSE 8080
+USER 65534
+ENTRYPOINT ["wasmtime", "serve", "-Scommon", "-Sp3", "-Wcomponent-model-async", "--allow-precompiled", "--addr", "0.0.0.0:8080", "/guest.cwasm"]
