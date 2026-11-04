@@ -2,6 +2,7 @@
 # Throughput and CPU of the variants under load, in two workloads (CLIENTS parallel clients, CPU time read before and after):
 #   load.csv  - a few-second CPU-bound request (GET /matmul/{n}); the platform overhead is invisible next to the computation
 #   hello.csv - a trivial request (GET /hello) for 10 s; shows the cost of the platform itself per request
+#               (throughput only for C: for A and B the load generator is the limit)
 # Variant C is measured twice in the same window: the backend alone and the whole stack (backend, nginx, db, s3).
 # The Docker daemon, containerd, shims and proxies (Linux only) are measured in the same window as <variant>_docker.
 # Peak memory is the highest value among samples taken every half a second during the test.
@@ -64,10 +65,11 @@ run_load() {
   while read -r label cpu_before _; do
     cpu_after=$(grep "^$label " <<<"$after" | cut -d' ' -f2)
     cpu=$(calc "$cpu_after - $cpu_before")
-    [[ $label == *_docker ]] || record "$label" "$run" throughput "$throughput" req/s
+    [[ " $THROUGHPUT_FOR " == *" $label "* ]] && record "$label" "$run" throughput "$throughput" req/s
     record "$label" "$run" cpu_percent "$(calc "$cpu / $duration * 100")" %
     record "$label" "$run" cpu_per_request "$(calc "$cpu / $requests * 1000")" ms
-    record "$label" "$run" peak_memory "$(grep "^$label " "$SAMPLES" | cut -d' ' -f3 | sort -g | tail -1)" MiB
+    # the memory of the Docker processes is measured in memory.csv; here it would be an absolute value
+    [[ $label == *_docker ]] || record "$label" "$run" peak_memory "$(grep "^$label " "$SAMPLES" | cut -d' ' -f3 | sort -g | tail -1)" MiB
   done <<<"$before"
 }
 
@@ -78,11 +80,13 @@ check_answer() {
   [[ $answer == "$EXPECTED_ANSWER" ]] || die "wrong answer: $answer (expected $EXPECTED_ANSWER)"
 }
 
-# measure_all <test name> <path> <load length>: runs every variant RUNS times and writes results/<test name>.csv
+# measure_all <test name> <path> <load length> <variants whose throughput is recorded>
+# Runs every variant RUNS times and writes results/<test name>.csv
 measure_all() {
   TEST=$1
   local path=$2
   LOAD_LENGTH=$3
+  THROUGHPUT_FOR=$4
   csv_init
 
   for run in $(seq 1 "$RUNS"); do
@@ -113,8 +117,9 @@ platform_deploy load
 auth="Authorization: Bearer $API_KEY"
 
 EXPECTED_ANSWER=
-measure_all load "matmul/$MATMUL_N" "-n 16"
+measure_all load "matmul/$MATMUL_N" "-n 16" "A B C_backend"
 EXPECTED_ANSWER=
-measure_all hello hello "-z 10s"
+# the load generator is the limit for A and B, so only their CPU per request is comparable
+measure_all hello hello "-z 10s" "C_backend"
 
 platform_delete "$FUNCTION_ID"

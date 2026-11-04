@@ -16,7 +16,8 @@ docker compose -f compose.prod.yml down -v
 docker compose -f compose.prod.yml up -d --build --wait
 sleep 10
 
-for test in startup load memory security; do
+# idle first, load last: the load tests leave a lot of data in the database and the storage
+for test in idle startup memory security load; do
   bash "tests/$test.sh"
 done
 
