@@ -4,7 +4,6 @@
 set -euo pipefail
 
 mkdir -p results
-bash tests/env.sh >results/env.txt
 
 # the handler (Wasm component and native server), the attack modules and the images of variants A and B
 cargo build --release --target wasm32-wasip2 --manifest-path bench/Cargo.toml -p guest
@@ -21,4 +20,6 @@ for test in startup load memory security; do
   bash "tests/$test.sh"
 done
 
+# after the builds, so that the image list in env.txt is complete
+bash tests/env.sh >results/env.txt
 python3 tests/summarize.py

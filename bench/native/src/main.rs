@@ -7,7 +7,11 @@ use tokio::net::TcpListener;
 async fn service(
     req: Request<Incoming>,
 ) -> Result<Response<Full<Bytes>>, std::convert::Infallible> {
-    let r = core_handler::handle(req.uri().path());
+    // the handler is CPU-bound, so it must not block a thread of the async runtime
+    let path = req.uri().path().to_string();
+    let r = tokio::task::spawn_blocking(move || core_handler::handle(&path))
+        .await
+        .unwrap();
     Ok(Response::builder()
         .status(r.status)
         .body(Full::new(Bytes::from(r.body)))
