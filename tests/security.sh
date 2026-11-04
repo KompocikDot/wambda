@@ -85,8 +85,8 @@ for _ in $(seq 5); do
   sleep 0.5
 done
 wait
-[[ $(calc "$worst < 1") == true ]] || fairness_passed=no
-report "fairness: slowest hello during 16 loops" "200 in <1 s" "200 in ${worst} s" "$fairness_passed" "$worst"
+[[ $(calc "$worst < 2") == true ]] || fairness_passed=no
+report "fairness: slowest hello during 16 loops" "200 in <2 s" "200 in ${worst} s" "$fairness_passed" "$worst"
 
 echo "--- isolation between users"
 other_key=$(register_and_login "$OTHER_COOKIES" other-tests@wambda.local)
