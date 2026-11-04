@@ -88,6 +88,7 @@ measure_all() {
   LOAD_LENGTH=$3
   THROUGHPUT_FOR=$4
   csv_init
+  restart_backend   # the memory of the backend must not depend on the tests that ran before
 
   for run in $(seq 1 "$RUNS"); do
     echo "$TEST: run $run of $RUNS"
