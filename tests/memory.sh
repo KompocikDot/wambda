@@ -3,7 +3,7 @@
 #   A - N containers, one per function; A_docker is the growth of the Docker processes (Linux only):
 #       the daemon, containerd, a shim per container and a proxy per published port
 #   C - N functions in the one backend process; the memory is the growth of the backend container
-#       after a clean restart. The fixed cost of the platform (idle_backend, idle_stack) is recorded too.
+#       after a clean restart. The fixed cost of the backend (idle_backend) is recorded too.
 # The platform must be running: docker compose -f compose.prod.yml up -d --build --wait
 # Usage: bash tests/memory.sh
 source "$(dirname "$0")/lib.sh"
@@ -51,7 +51,6 @@ measure_platform() {
   sleep "$SETTLE_SECONDS"
   before=$(backend_usage | cut -d' ' -f2)
   record C_backend "$run" idle_backend "$before" MiB
-  record C_stack "$run" idle_stack "$(stack_usage | cut -d' ' -f2)" MiB
 
   for n in $COUNTS; do
     while ((deployed < n)); do
