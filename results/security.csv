@@ -1,0 +1,25 @@
+case,expected,received,passed,seconds
+memory-limit,422,422,yes,0.057571
+trap,422,422,yes,0.012444
+infinite-loop,408,408,yes,5.016232
+filesystem,200,200,yes,0.016196
+environment,200,200,yes,0.014137
+forbidden-headers,200,200,yes,0.013876
+ssrf 127.0.0.1,200,200,yes,0.014898
+ssrf localhost,200,200,yes,0.012579
+ssrf localtest.me,200,200,yes,0.013133
+ssrf 169.254.169.254,200,200,yes,0.011508
+ssrf 10.0.0.1,200,200,yes,0.012770
+ssrf 192.168.0.1,200,200,yes,0.011366
+ssrf 100.64.0.1,200,200,yes,0.010925
+ssrf s3:9000,200,200,yes,0.012319
+ssrf db:5432,200,200,yes,0.012391
+ssrf control: public address is reachable,200,200,yes,0.037187
+fairness: slowest hello during 16 loops,200 in <2 s,200 in 0.242342 s,yes,0.242342
+execute without API key,401,401,yes,0.000859
+execute with invalid API key,401,401,yes,0.000860
+execute with another user's API key,404,404,yes,0.001649
+read another user's function,404,404,yes,0.001617
+update another user's function,404,404,yes,0.002596
+delete another user's function,404,404,yes,0.001531
+control: owner executes own function,200,200,yes,0.013883
