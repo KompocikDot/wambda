@@ -9,7 +9,7 @@ const duration = computed(() => {
   const minutes = ((ms / 60000) % 60).toFixed()
   const seconds = ((ms / 1000) % 60).toFixed()
   const milliseconds = ((ms % 1000) / 1000).toFixed()
-  
+
   if (ms > 3600000) {
     return `${hours}h ${minutes}m ${seconds}s`
   } else if (ms > 60000) {
@@ -36,14 +36,14 @@ const duration = computed(() => {
         <div class="text-muted text-sm">Duration</div>
         <div class="text-highlighted font-bold">{{ duration }}</div>
       </div>
-      <div class="flex flex-row justify-between">
+      <!-- <div class="flex flex-row justify-between">
         <div class="text-muted text-sm">Memory used</div>
         <div class="text-highlighted font-bold">6.4 / 128Mb</div>
       </div>
       <div class="flex flex-row justify-between">
         <div class="text-muted text-sm">Cold start</div>
         <div class="text-highlighted font-bold">No</div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

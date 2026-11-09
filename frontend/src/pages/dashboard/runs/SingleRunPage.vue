@@ -84,9 +84,9 @@ onUnmounted(() => {
           </div>
         </template>
         <template #right>
-          <div class="flex gap-x-2">
+          <!-- <div class="flex gap-x-2">
             <UButton label="Run function" icon="i-lucide-play" />
-          </div>
+          </div> -->
         </template>
       </UDashboardNavbar>
 

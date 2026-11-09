@@ -82,14 +82,14 @@ const onSubmit = async (event: FormSubmitEvent<UpdateFunctionOutput>) => {
   payload.append('envsStringified', stringifyEnvVariables(event.data.envs))
 
   try {
-    await $api(endpoint, {
+    const resp = await $api(endpoint, {
       credentials: 'include',
       method,
       body: payload,
     })
     toast.add({
-      title: isNewForm.value ? 'Function created' : 'Changes saved',
-      color: 'success',
+      title: isNewForm.value ? `Function created, uuid: ${resp.uuid}` : 'Changes saved',
+      color: 'primary',
     })
   } catch (e) {
     console.error(e)
